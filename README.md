@@ -6,7 +6,7 @@
 
 <p>
 <a href="https://titangp1.github.io/Guardia_Rev/"><img src="https://img.shields.io/badge/Ouvrir_le_site-1d6fd1?style=flat-square&logo=githubpages&logoColor=white" alt="Ouvrir le site"></a>
-<img src="https://img.shields.io/badge/version-3.0.0-1f2937?style=flat-square" alt="Version 2.0.0">
+<img src="https://img.shields.io/badge/version-4.0.0-1f2937?style=flat-square" alt="Version 4.0.0">
 <img src="https://img.shields.io/badge/acc%C3%A8s-%40guardiaschool.fr-a77d2f?style=flat-square" alt="Accès @guardiaschool.fr">
 </p>
 
@@ -40,7 +40,8 @@ Les questions et exercices tirés des anciens sujets sont marqués « Partiel 20
 | **Profil** | Photo (recadrée en 192 px), pseudo, groupe, bio, apparition ou non dans le classement |
 | **Classement** | Podium, rang, nombre d'étudiants inscrits, profils publics des joueurs |
 | **Défis** | Duel sur les mêmes 10 questions : meilleur score gagne, le temps départage, +70 XP à la victoire |
-| **Tableau de bord** | Grille « bento » : niveau et XP, série, classement, défis à relever, activité, maîtrise, compte à rebours, « À faire maintenant » |
+| **Tableau de bord** | Niveau et XP, série, classement, défis à relever, activité, maîtrise, compte à rebours, « À faire maintenant » |
+| **Pages séparées** | Une page HTML par écran, fil d'Ariane, connexion obligatoire sur chaque page avec retour à la page demandée |
 | **Cours** | Sommaire, sections à cocher « lu », impression propre (PDF) |
 | **QCM** | Ordre aléatoire, plusieurs bonnes réponses possibles, explications, correction détaillée, « Refaire mes erreurs » |
 | **Cartes** | Répétition espacée (boîtes de Leitner : 1, 2, 4, 8, 16 jours) |
@@ -59,7 +60,7 @@ Les questions et exercices tirés des anciens sujets sont marqués « Partiel 20
 python -m http.server 8000
 ```
 
-puis ouvrir <http://localhost:8000>. Pour tester sans compte Firebase : <http://localhost:8000/?local> (comptes gardés dans le navigateur, uniquement sur localhost).
+puis ouvrir <http://localhost:8000>. Pour tester sans compte Firebase : <http://localhost:8000/?local> (comptes gardés dans le navigateur, uniquement sur localhost ; le mode reste actif pendant la session, de page en page).
 
 ## Firebase
 
@@ -76,21 +77,36 @@ puis ouvrir <http://localhost:8000>. Pour tester sans compte Firebase : <http://
 
 ```text
 Guardia_Rev/
-├── index.html            application (une seule page)
+├── index.html            tableau de bord
+├── connexion.html        connexion et inscription (seule page accessible sans compte)
+├── matieres.html         les 7 matières et la progression
+├── cours.html ?m=…       cours d'une matière (#s3 pour aller à la section 3)
+├── qcm.html ?m=…         QCM d'une matière
+├── cartes.html ?m=…      cartes à répétition espacée
+├── exercices.html ?m=…   exercices type partiel
+├── revisions.html        cartes à revoir, erreurs, QCM express
+├── partiel.html          partiel blanc chronométré
+├── entrainements.html ?t=sousreseaux|ports|osi|commandes
+├── lexique.html ?m=… ?q=…
+├── defis.html ?adv=…     défis entre étudiants
+├── classement.html       classement et nombre d'inscrits
+├── joueur.html ?id=…     profil public d'un étudiant
+├── profil.html           mon profil, photo, badges, réglages
 ├── assets/
-│   ├── style.css         design Bento sombre par défaut (ui-ux-pro-max), thème clair
-│   ├── app.js            connexion, navigation, QCM, cartes, révisions, entraînements, recherche
-│   ├── config.js         domaine autorisé et configuration Firebase
+│   ├── style.css         design (clair par défaut, sombre selon le système)
+│   ├── app.js            code commun à toutes les pages (connexion, navigation, QCM, cartes, défis…)
+│   ├── config.js         domaine autorisé, adresses bannies (empreintes) et configuration Firebase
 │   └── data/             une fiche par matière (cours, cartes, QCM, exercices)
-└── firebase/
-    ├── firestore.rules
-    └── email-verification.html
+├── firebase/
+│   ├── firestore.rules
+│   └── email-verification.html
+└── tools/build_pages.py  régénère les pages HTML (titres, scripts, version)
 ```
 
 Pour ajouter du contenu : éditer le fichier de la matière dans `assets/data/`. Ajouter les nouvelles questions et cartes **à la fin** des listes (la progression est liée à leur position). Pour plusieurs bonnes réponses : `a:[0,2]`.
 
 ## Crédits
 
-Icônes [Lucide](https://lucide.dev) (licence ISC). Polices Bricolage Grotesque, Figtree et JetBrains Mono (Google Fonts).
+Icônes [Lucide](https://lucide.dev) (licence ISC). Polices Inter et JetBrains Mono (Google Fonts). Choix de design guidés par les skills ui-ux-pro-max, no-ai-design-slop et beautiful-shadows.
 
-<div align="center"><sub>Guardia_Rev · v3.0.0 · Titan_gp1</sub></div>
+<div align="center"><sub>Guardia_Rev · v4.0.0 · Titan_gp1</sub></div>
