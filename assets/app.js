@@ -42,18 +42,21 @@ async function firebaseBackend(fb){
   const [A,U,F]=await Promise.all(['firebase-app.js','firebase-auth.js','firebase-firestore.js'].map(f=>import(SDK+f)));
   const app=A.initializeApp(fb),auth=U.getAuth(app),db=F.getFirestore(app);auth.languageCode='fr';
   const doc=uid=>F.doc(db,'users',uid);
+  /* Après validation, la page Firebase propose « Continuer » pour revenir sur le site. */
+  const verify=async u=>{try{await U.sendEmailVerification(u,{url:location.origin+location.pathname})}
+    catch(e){if(/continue-uri|unauthorized/.test(e.code||''))await U.sendEmailVerification(u);else throw e}};
   const asUser=u=>u?{id:u.uid,email:(u.email||'').toLowerCase(),name:u.displayName||'',verified:!!u.emailVerified}:null;
   return {
     mode:'firebase',
     onAuth:cb=>U.onAuthStateChanged(auth,u=>cb(asUser(u))),
     async signUp(email,pw,pseudo){const r=await U.createUserWithEmailAndPassword(auth,email,pw);
-      await U.updateProfile(r.user,{displayName:pseudo});await U.sendEmailVerification(r.user);return asUser(r.user)},
+      await U.updateProfile(r.user,{displayName:pseudo});await verify(r.user);return asUser(r.user)},
     async signIn(email,pw){const r=await U.signInWithEmailAndPassword(auth,email,pw);return asUser(r.user)},
     /* hd : Google propose directement les comptes de l'école ; le domaine est revérifié après la connexion. */
     async google(){const p=new U.GoogleAuthProvider();p.setCustomParameters({hd:DOMAIN,prompt:'select_account'});
       try{return asUser((await U.signInWithPopup(auth,p)).user)}catch(e){if(e.code==='auth/popup-blocked'){await U.signInWithRedirect(auth,p);return null}throw e}},
     async reload(){if(!auth.currentUser)return null;await U.reload(auth.currentUser);await auth.currentUser.getIdToken(true);return asUser(auth.currentUser)},
-    resend:()=>U.sendEmailVerification(auth.currentUser),
+    resend:()=>verify(auth.currentUser),
     reset:e=>U.sendPasswordResetEmail(auth,e),
     signOut:()=>U.signOut(auth),
     async load(uid){const s=await F.getDoc(doc(uid));return s.exists()?s.data():null},
