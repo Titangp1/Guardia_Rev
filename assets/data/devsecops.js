@@ -1,0 +1,297 @@
+/* Guardia_Rev · Introduction à la programmation & DevSecOps (Python, API REST, Git, Linux, DevSecOps). */
+window.GR=window.GR||{subjects:[]};
+GR.subjects.push({
+id:'devsecops', name:'Programmation & DevSecOps', icon:'PY', color:'linear-gradient(140deg,#2f9e6e,#14614a)',
+exam:'UE DevSecOps · Introduction à la programmation',
+short:'Python, HTTP et API REST, JSON, Git et GitHub, terminal Linux, Docker, CI/CD, DevOps et DevSecOps.',
+intro:'Le module « Introduction à la programmation & DevSecOps » : bases de Python, client/serveur, API REST CRUD, JSON, Git, Linux, et la boucle DevOps/DevSecOps du projet fil rouge (Tamagochi ou Tavernier RPG).',
+fiche:[
+{t:'Python : les bases',h:`
+<h3>Variables et types simples</h3>
+<pre><code>nom = "Golem"        # str (texte)
+pv = 120             # int (entier)
+force = 1.5          # float (décimal)
+vivant = True        # bool (True / False)
+rien = None          # absence de valeur
+print(type(pv))      # &lt;class 'int'&gt;
+age = int(input("Âge ? "))   # input() renvoie toujours un str</code></pre>
+<p>Opérateurs : <code>+ - * /</code> (division décimale : <code>7/2 = 3.5</code>), <code>//</code> division entière (<code>7//2 = 3</code>), <code>%</code> reste (<code>7%2 = 1</code>), <code>**</code> puissance. Comparaisons : <code>== != &lt; &gt; &lt;= &gt;=</code>. Logique : <code>and or not</code>.</p>
+<p>f-string : <code>print(f"{nom} a {pv} PV")</code>.</p>
+<h3>Conditions</h3>
+<pre><code>if pv &lt;= 0:
+    print("mort")
+elif pv &lt; 30:
+    print("blessé")
+else:
+    print("en forme")</code></pre>
+<p>L'<b>indentation</b> (4 espaces) délimite les blocs : une erreur d'indentation provoque une <code>IndentationError</code>.</p>
+<h3>Boucles</h3>
+<pre><code>for i in range(3):        # 0, 1, 2  (la borne de fin est exclue)
+    print(i)
+for objet in inventaire:  # parcourt une liste
+    print(objet)
+while pv &gt; 0:             # tant que la condition est vraie
+    pv -= 10
+# break : sortir de la boucle · continue : passer au tour suivant</code></pre>
+<h3>Fonctions</h3>
+<pre><code>def calcul_degats(attaque, defense=0):
+    """Renvoie les dégâts infligés (jamais négatifs)."""
+    return max(0, attaque - defense)
+
+print(calcul_degats(30, 12))   # 18</code></pre>
+<p>Une fonction sans <code>return</code> renvoie <code>None</code>. Les variables créées dans une fonction sont <b>locales</b>.</p>`},
+{t:'Listes et dictionnaires',h:`
+<h3>Listes (ordonnées, modifiables)</h3>
+<pre><code>inventaire = ["épée", "potion"]
+inventaire.append("clé")      # ajoute à la fin
+inventaire[0]                 # "épée"  (les index commencent à 0)
+inventaire[-1]                # "clé"   (dernier élément)
+len(inventaire)               # 3
+inventaire.remove("potion")   # retire par valeur
+inventaire.pop()              # retire et renvoie le dernier
+"épée" in inventaire          # True
+inventaire[0:2]               # tranche : index 0 et 1</code></pre>
+<h3>Dictionnaires (clé → valeur)</h3>
+<pre><code>golem = {"nom": "Golem", "pv": 120, "force": 15}
+golem["pv"]             # 120
+golem["pv"] = 100       # modifier
+golem["niveau"] = 3     # ajouter
+golem.get("armure", 0)  # 0 si la clé n'existe pas (pas d'erreur)
+for cle, valeur in golem.items():
+    print(cle, valeur)
+del golem["force"]</code></pre>
+<p>Accéder à une clé absente avec <code>d["x"]</code> lève une <code>KeyError</code>. Une liste de dictionnaires est la structure typique des données d'une API (une liste de quêtes, chacune étant un dictionnaire).</p>
+<p>Autres types : <b>tuple</b> <code>(1, 2)</code> non modifiable ; <b>set</b> <code>{1, 2}</code> sans doublons.</p>`},
+{t:'Client/serveur, HTTP et API REST',h:`
+<p>Le <b>client</b> (navigateur, script Python, <code>curl</code>) envoie une <b>requête</b> ; le <b>serveur</b> la traite et renvoie une <b>réponse</b> avec un <b>code de statut</b>. HTTP est sans état : chaque requête est indépendante.</p>
+<h3>Méthodes HTTP et CRUD</h3>
+<div class="tbl"><table><tr><th>CRUD</th><th>Méthode</th><th>Exemple (Tavernier RPG)</th></tr>
+<tr><td>Create</td><td><b>POST</b></td><td><code>POST /quests</code> publier une quête</td></tr>
+<tr><td>Read</td><td><b>GET</b></td><td><code>GET /quests</code>, <code>GET /quests/3</code></td></tr>
+<tr><td>Update</td><td><b>PUT</b> (remplace tout) / <b>PATCH</b> (modifie une partie)</td><td><code>PATCH /quests/3</code> statut « terminée »</td></tr>
+<tr><td>Delete</td><td><b>DELETE</b></td><td><code>DELETE /quests/3</code></td></tr></table></div>
+<p>GET ne doit pas modifier les données. GET, PUT et DELETE sont <b>idempotents</b> (les répéter donne le même résultat) ; POST ne l'est pas (deux POST = deux quêtes).</p>
+<h3>Codes de statut</h3>
+<ul><li><b>2xx succès</b> : 200 OK, 201 Created (après un POST), 204 No Content (après un DELETE)</li>
+<li><b>3xx redirection</b> : 301, 302, 304</li>
+<li><b>4xx erreur du client</b> : 400 Bad Request, 401 Unauthorized (non authentifié), 403 Forbidden (authentifié mais interdit), 404 Not Found, 405 Method Not Allowed, 409 Conflict, 422 données invalides</li>
+<li><b>5xx erreur du serveur</b> : 500 Internal Server Error, 502 Bad Gateway, 503 Service Unavailable</li></ul>
+<p><b>REST</b> : style d'architecture où chaque <b>ressource</b> a une URL (<code>/quests/3</code>), manipulée avec les méthodes HTTP, sans état, avec des représentations en JSON.</p>`},
+{t:'JSON et consommer une API en Python',h:`
+<p><b>JSON</b> (JavaScript Object Notation) : format texte d'échange de données. Objets <code>{}</code> avec des clés <b>entre guillemets doubles</b>, tableaux <code>[]</code>, chaînes, nombres, <code>true/false</code>, <code>null</code>.</p>
+<pre><code>{"id": 3, "nom": "Le dragon", "recompense": 500, "statut": "disponible", "tags": ["feu"], "aventurier": null}</code></pre>
+<p>Correspondance Python : objet ↔ dict, tableau ↔ list, true ↔ True, null ↔ None.</p>
+<pre><code>import json, requests
+
+texte = json.dumps({"pv": 10})        # dict → texte JSON
+donnees = json.loads('{"pv": 10}')   # texte JSON → dict
+with open("data.json") as f:
+    quetes = json.load(f)             # fichier → objet Python
+
+r = requests.get("https://api.exemple.fr/quests", timeout=5)
+if r.status_code == 200:
+    for q in r.json():
+        print(q["nom"])
+requests.post(url, json={"nom": "Gobelins"})</code></pre>
+<p>Un backend simple avec <b>Flask</b> ou <b>FastAPI</b> :</p>
+<pre><code>from flask import Flask, jsonify, request
+app = Flask(__name__)
+quetes = []
+
+@app.get("/quests")
+def lister():
+    return jsonify(quetes), 200
+
+@app.post("/quests")
+def creer():
+    q = request.get_json()
+    quetes.append(q)
+    return jsonify(q), 201</code></pre>`},
+{t:'Git et GitHub',h:`
+<p><b>Git</b> : logiciel de gestion de versions <b>local</b> (historique, branches). <b>GitHub</b> : plateforme en ligne qui héberge des dépôts Git et ajoute la collaboration (pull requests, issues, Actions).</p>
+<pre><code>git init                      # créer un dépôt
+git clone URL                 # copier un dépôt distant
+git status                    # état des fichiers
+git add fichier.py            # préparer (index / staging)
+git commit -m "Ajoute la route POST /quests"
+git log --oneline             # historique
+git branch develop            # créer une branche
+git switch develop            # changer de branche (ou git checkout)
+git merge develop             # fusionner develop dans la branche courante
+git remote add origin URL
+git push -u origin main       # envoyer
+git pull                      # récupérer et fusionner (= fetch + merge)</code></pre>
+<p>Les <b>trois zones</b> : répertoire de travail → <code>add</code> → index (staging) → <code>commit</code> → dépôt local → <code>push</code> → dépôt distant.</p>
+<p><b>Workflow du projet</b> : branche <code>main</code> (stable) et <code>develop</code> (intégration) ; on travaille sur develop puis on ouvre une <b>pull request</b> develop → main, relue avant fusion. Commits réguliers, un par fonctionnalité ou correctif, avec un message clair.</p>
+<p><code>.gitignore</code> : fichiers à ne jamais versionner (<code>venv/</code>, <code>__pycache__/</code>, <code>.env</code> contenant des secrets).</p>
+<div class="trap">Un secret poussé sur GitHub est compromis, même supprimé ensuite : il reste dans l'historique. Il faut le <b>révoquer</b>.</div>`},
+{t:'Linux et le terminal',h:`
+<pre><code>pwd                 # où suis-je ?
+ls -la              # lister (tout, en détail)
+cd /var/log         # changer de dossier (cd .. remonte, cd ~ = dossier perso)
+mkdir projet        # créer un dossier
+touch app.py        # créer un fichier vide
+cp a b · mv a b     # copier · déplacer/renommer
+rm fichier · rm -r dossier
+cat · less · head · tail -f   # lire (tail -f suit un log en direct)
+grep "ERROR" app.log          # chercher un motif
+nano app.py                   # éditer
+sudo apt update &amp;&amp; sudo apt install python3-pip
+chmod 755 script.sh · chown user:groupe fichier
+ps aux · kill PID · systemctl status squid</code></pre>
+<h3>Permissions</h3>
+<p><code>-rwxr-xr--</code> : type, puis droits du <b>propriétaire</b> (rwx), du <b>groupe</b> (r-x), des <b>autres</b> (r--). r = 4, w = 2, x = 1 : <code>chmod 754</code> = rwx r-x r--. <code>chmod 600</code> = lecture/écriture pour le propriétaire seulement (fichier de secrets, clé SSH).</p>
+<p>Arborescence : <code>/</code> racine, <code>/home</code> utilisateurs, <code>/etc</code> configuration, <code>/var/log</code> journaux, <code>/tmp</code> temporaire, <code>/root</code> dossier de root. Chemin <b>absolu</b> (commence par /) ou <b>relatif</b> (depuis le dossier courant).</p>`},
+{t:'Dev, Ops, DevOps, DevSecOps',h:`
+<ul><li><b>Dev</b> : les développeurs, qui écrivent le code et veulent livrer vite.</li>
+<li><b>Ops</b> : les opérations, qui exploitent les serveurs et veulent la stabilité.</li>
+<li><b>DevOps</b> : culture et pratiques qui rapprochent les deux : automatisation, livraisons fréquentes et petites, feedback rapide, responsabilité partagée.</li>
+<li><b>DevSecOps</b> : intégrer la <b>sécurité à chaque étape</b> du cycle, dès le début (« shift left »), au lieu d'un audit à la fin.</li></ul>
+<p><b>Boucle DevOps</b> : Plan → Code → Build → Test → Release → Deploy → Operate → Monitor, et on recommence.</p>
+<h3>Contrôles de sécurité automatisés</h3>
+<ul><li><b>SAST</b> (Static Application Security Testing) : analyse le <b>code source</b> sans l'exécuter (ex. Bandit pour Python, Semgrep, CodeQL).</li>
+<li><b>SCA</b> (Software Composition Analysis) : vérifie les <b>dépendances</b> et leurs vulnérabilités connues, CVE (ex. pip-audit, Dependabot, Safety, Trivy).</li>
+<li><b>DAST</b> : teste l'application <b>en fonctionnement</b> de l'extérieur (ex. OWASP ZAP).</li>
+<li><b>Détection de secrets</b> : gitleaks, push protection de GitHub.</li>
+<li><b>Scan d'image Docker</b> : Trivy.</li></ul>
+<p>Contrôles qualité : <b>formatage</b> (black), <b>linting</b> (flake8, ruff, pylint), <b>tests unitaires</b> (pytest).</p>`},
+{t:'Docker et CI/CD',h:`
+<p><b>Docker</b> : empaquette l'application et ses dépendances dans une <b>image</b> ; un <b>conteneur</b> est une image en cours d'exécution. Plus léger qu'une VM : il partage le noyau de l'hôte.</p>
+<pre><code># Dockerfile
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 5000
+CMD ["python", "app.py"]</code></pre>
+<pre><code>docker build -t tavernier .
+docker run -d -p 5000:5000 -v donnees:/app/data tavernier   # -p hôte:conteneur, -v volume persistant
+docker ps · docker logs ID · docker compose up -d</code></pre>
+<p>Les données d'un conteneur disparaissent avec lui : on utilise un <b>volume</b> pour les rendre <b>persistantes</b>.</p>
+<h3>CI/CD avec GitHub Actions</h3>
+<p><b>CI</b> (intégration continue) : à chaque push/PR, le code est automatiquement construit et testé. <b>CD</b> (livraison/déploiement continu) : l'artefact validé est publié/déployé automatiquement (image poussée sur Docker Hub).</p>
+<pre><code># .github/workflows/ci.yml
+on: [push, pull_request]
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt black flake8 pytest bandit pip-audit
+      - run: black --check .      # qualité 1 : formatage
+      - run: flake8 .             # qualité 2 : linting
+      - run: pytest               # qualité 3 : tests
+      - run: bandit -r .          # sécurité 1 : SAST
+      - run: pip-audit            # sécurité 2 : SCA
+      - uses: docker/login-action@v3
+        with:
+          username: \${{ secrets.DOCKERHUB_USERNAME }}
+          password: \${{ secrets.DOCKERHUB_TOKEN }}</code></pre>
+<div class="key">Les identifiants sont stockés dans les <b>secrets GitHub</b> (Settings › Secrets and variables › Actions) et lus avec <code>\${{ secrets.NOM }}</code> : <b>jamais en clair</b> dans le code ou le YAML.</div>`}
+],
+cards:[
+['Résultat de <code>7 // 2</code> et <code>7 % 2</code> ?','<code>3</code> (division entière) et <code>1</code> (reste).'],
+['Que renvoie <code>input()</code> ?','Toujours une chaîne (str) : il faut convertir avec int() ou float().'],
+['Que produit <code>range(3)</code> ?','0, 1, 2 (la borne de fin est exclue).'],
+['Index du premier élément d\'une liste ? Du dernier ?','<code>0</code> et <code>-1</code>.'],
+['Ajouter un élément à la fin d\'une liste ?','<code>liste.append(x)</code>'],
+['Lire une clé de dictionnaire sans erreur si elle manque ?','<code>d.get("cle", valeur_par_defaut)</code>'],
+['Que renvoie une fonction sans return ?','<code>None</code>'],
+['Les 4 opérations CRUD et leurs méthodes HTTP ?','Create = POST, Read = GET, Update = PUT/PATCH, Delete = DELETE.'],
+['PUT vs PATCH ?','PUT remplace toute la ressource ; PATCH n\'en modifie qu\'une partie.'],
+['Code HTTP après une création réussie ?','<b>201 Created</b>'],
+['401 vs 403 ?','401 : pas authentifié. 403 : authentifié mais pas autorisé.'],
+['Que signifient les codes 4xx et 5xx ?','4xx : erreur du client (404…). 5xx : erreur du serveur (500…).'],
+['Qu\'est-ce que JSON ?','Un format texte d\'échange de données : objets {}, tableaux [], clés entre guillemets doubles.'],
+['json.loads vs json.dumps ?','loads : texte JSON → objet Python. dumps : objet Python → texte JSON.'],
+['Git vs GitHub ?','Git : outil local de versionnement. GitHub : hébergement en ligne de dépôts + collaboration.'],
+['Les 3 zones de Git ?','Répertoire de travail → index (staging, git add) → dépôt (git commit).'],
+['git pull = ?','git fetch + git merge.'],
+['À quoi sert une pull request ?','Proposer de fusionner une branche (develop → main) avec relecture avant fusion.'],
+['Rôle du fichier .gitignore ?','Lister les fichiers à ne jamais versionner (venv, __pycache__, .env…).'],
+['chmod 754 = ?','rwx (propriétaire) r-x (groupe) r-- (autres).'],
+['Où sont les journaux sous Linux ? La configuration ?','<code>/var/log</code> · <code>/etc</code>'],
+['Commande pour suivre un log en direct ?','<code>tail -f fichier.log</code>'],
+['DevOps en une phrase ?','Rapprocher développement et exploitation par l\'automatisation et des livraisons fréquentes.'],
+['DevSecOps en une phrase ?','Intégrer la sécurité à chaque étape du cycle, dès le début (shift left).'],
+['SAST vs SCA vs DAST ?','SAST : analyse du code source. SCA : vulnérabilités des dépendances. DAST : test de l\'appli en fonctionnement.'],
+['Image vs conteneur Docker ?','L\'image est le modèle ; le conteneur est une image en cours d\'exécution.'],
+['Rendre les données d\'un conteneur persistantes ?','Utiliser un volume (<code>-v nom:/chemin</code>).'],
+['Où stocker les mots de passe d\'un pipeline GitHub Actions ?','Dans les secrets GitHub, lus avec <code>${{ secrets.NOM }}</code>.'],
+['CI vs CD ?','CI : construire et tester automatiquement à chaque push. CD : livrer/déployer automatiquement.']
+],
+quiz:[
+{q:'Que affiche ce code ?',code:'x = 7\ny = 2\nprint(x // y, x % y)',o:['3.5 1','3 1','3 0','4 1'],a:[1],e:'// est la division entière (3), % le reste (1).'},
+{q:'Que affiche ce code ?',code:'for i in range(1, 4):\n    print(i, end=" ")',o:['0 1 2 3','1 2 3 4','1 2 3','1 2 3 4 '],a:[2],e:'range(1, 4) va de 1 à 3 : la borne de fin est exclue.'},
+{q:'Quelle instruction ajoute "clé" à la fin de la liste inventaire ?',o:['inventaire.add("clé")','inventaire.append("clé")','inventaire.push("clé")','inventaire + "clé"'],a:[1],e:'append ajoute à la fin. add est pour les sets, push n\'existe pas en Python.'},
+{q:'Que vaut d.get("armure", 0) si d = {"pv": 10} ?',o:['Une KeyError','None','0','10'],a:[2],e:'get renvoie la valeur par défaut si la clé est absente.'},
+{q:'Que affiche ce code ?',code:'golem = {"nom": "Golem", "pv": 120}\ngolem["pv"] -= 20\nprint(golem["pv"])',o:['120','100','-20','Une erreur'],a:[1],e:'On retire 20 à la valeur associée à la clé "pv".'},
+{q:'Que renvoie la fonction suivante pour f(5) ?',code:'def f(n):\n    if n > 3:\n        print("grand")',o:['"grand"','True','None','5'],a:[2],e:'Elle affiche "grand" mais ne renvoie rien : la valeur de retour est None.'},
+{q:'Quel est le type de input("Âge ? ") si l\'utilisateur tape 18 ?',o:['int','str','float','bool'],a:[1],e:'input renvoie toujours une chaîne : int(input()) pour obtenir un entier.'},
+{q:'Quelle méthode HTTP utiliser pour créer une nouvelle quête ?',o:['GET','POST','PUT','DELETE'],a:[1],e:'POST /quests crée une ressource ; le serveur répond 201 Created.'},
+{q:'Quelle méthode HTTP pour modifier seulement le statut d\'une quête ?',o:['GET','POST','PATCH','DELETE'],a:[2],e:'PATCH modifie partiellement. PUT remplacerait toute la ressource.'},
+{q:'Quel code de statut indique une ressource introuvable ?',o:['200','201','404','500'],a:[2],e:'404 Not Found. 500 = erreur interne du serveur.'},
+{q:'Un utilisateur connecté tente une action qu\'il n\'a pas le droit de faire. Code adapté ?',o:['401','403','404','200'],a:[1],e:'403 Forbidden : identifié mais interdit. 401 : non authentifié.'},
+{q:'Quelles méthodes HTTP sont idempotentes ?',o:['GET','POST','PUT','DELETE'],a:[0,2,3],e:'Répéter GET, PUT ou DELETE donne le même état final ; deux POST créent deux ressources.'},
+{q:'Lequel est un JSON valide ?',o:["{'nom': 'Golem'}",'{"nom": "Golem", "pv": 120}','{nom: "Golem"}','["nom" = "Golem"]'],a:[1],e:'En JSON, les clés et chaînes sont entre guillemets doubles.'},
+{q:'Quelle fonction transforme un texte JSON en dictionnaire Python ?',o:['json.dumps','json.loads','json.write','dict.json'],a:[1],e:'loads = load string. dumps fait l\'inverse.'},
+{q:'Quelle commande Git enregistre les modifications indexées dans l\'historique local ?',o:['git add','git commit','git push','git pull'],a:[1],e:'add prépare, commit enregistre localement, push envoie au distant.'},
+{q:'Quelle commande envoie les commits locaux vers GitHub ?',o:['git pull','git fetch','git push','git clone'],a:[2],e:'push envoie ; pull et fetch récupèrent ; clone copie un dépôt.'},
+{q:'git pull correspond à :',o:['git fetch + git merge','git add + git commit','git clone','git push --force'],a:[0],e:'pull récupère les commits distants puis les fusionne dans la branche courante.'},
+{q:'Dans le projet, comment intègre-t-on develop dans main ?',o:['git push --force sur main','Par une pull request develop → main','En supprimant main','En copiant les fichiers à la main'],a:[1],e:'La PR permet relecture et contrôles CI avant la fusion.'},
+{q:'Quel fichier empêche de versionner .env et venv/ ?',o:['README.md','.gitignore','requirements.txt','Dockerfile'],a:[1],e:'.gitignore liste les chemins ignorés par Git.'},
+{q:'Que fait chmod 600 secret.txt ?',o:['Tout le monde peut lire','Lecture/écriture pour le propriétaire uniquement','Exécution pour tous','Supprime le fichier'],a:[1],e:'6 = 4 + 2 = rw- pour le propriétaire, 0 pour le groupe et les autres.'},
+{q:'Quelle commande affiche le dossier courant ?',o:['ls','cd','pwd','whoami'],a:[2],e:'pwd = print working directory.'},
+{q:'Dans quel dossier Linux trouve-t-on les fichiers de configuration ?',o:['/home','/etc','/var/log','/tmp'],a:[1],e:'/etc : configuration ; /var/log : journaux.'},
+{q:'Qu\'est-ce que le DevSecOps ?',o:['Une équipe de sécurité qui audite le code à la fin','L\'intégration de la sécurité à chaque étape du cycle de vie','Un langage de programmation','Un pare-feu applicatif'],a:[1],e:'Shift left : la sécurité est automatisée et présente dès la conception.'},
+{q:'Bandit analyse le code Python sans l\'exécuter. C\'est un outil de :',o:['DAST','SAST','SCA','Monitoring'],a:[1],e:'SAST = analyse statique du code source.'},
+{q:'pip-audit ou Dependabot vérifient les vulnérabilités des bibliothèques utilisées. C\'est :',o:['SAST','SCA','DAST','Un linter'],a:[1],e:'SCA = analyse de la composition logicielle (dépendances, CVE).'},
+{q:'Lesquels sont des contrôles de qualité (et non de sécurité) ?',o:['black (formatage)','flake8 (linting)','pytest (tests unitaires)','gitleaks (secrets)'],a:[0,1,2],e:'gitleaks détecte des secrets : c\'est un contrôle de sécurité.'},
+{q:'Où stocker le mot de passe Docker Hub utilisé par GitHub Actions ?',o:['Dans le fichier YAML','Dans le code Python','Dans les secrets GitHub','Dans le README'],a:[2],e:'Les secrets chiffrés de GitHub sont injectés à l\'exécution, jamais écrits en clair.'},
+{q:'Comment rendre les données d\'un conteneur persistantes ?',o:['Avec un volume Docker','Avec docker ps','Avec EXPOSE','Impossible'],a:[0],e:'-v nom_volume:/app/data : les données survivent à la suppression du conteneur.'},
+{q:'Dans « docker run -p 8080:5000 app », à quoi correspond 8080 ?',o:['Au port dans le conteneur','Au port de la machine hôte','Au numéro de version','À la mémoire'],a:[1],e:'-p hôte:conteneur : on accède à l\'appli sur localhost:8080, qui écoute sur 5000 dans le conteneur.'},
+{q:'Que fait la CI (intégration continue) ?',o:['Elle écrit le code','Elle construit et teste automatiquement le code à chaque push','Elle remplace Git','Elle chiffre le dépôt'],a:[1],e:'La CI détecte les erreurs au plus tôt ; la CD publie/déploie ensuite.'}
+],
+exos:[
+{t:'Écrire une fonction Python',pts:'entraînement',q:`<p>Écrivez une fonction <code>nourrir(pet)</code> pour le Tamagochi : <code>pet</code> est un dictionnaire <code>{"faim": 70, "energie": 40, "humeur": 50, "vivant": True}</code>. Nourrir réduit la faim de 30 et augmente l'énergie et l'humeur de 10. Les valeurs restent entre 0 et 100. Si l'animal est mort, la fonction lève une erreur.</p>`,r:`
+<pre><code>def borne(v):
+    return max(0, min(100, v))
+
+def nourrir(pet):
+    if not pet["vivant"]:
+        raise ValueError("Impossible : l'animal est mort.")
+    pet["faim"] = borne(pet["faim"] - 30)
+    pet["energie"] = borne(pet["energie"] + 10)
+    pet["humeur"] = borne(pet["humeur"] + 10)
+    return pet
+
+print(nourrir({"faim": 70, "energie": 40, "humeur": 50, "vivant": True}))
+# {'faim': 40, 'energie': 50, 'humeur': 60, 'vivant': True}</code></pre>
+<p>Points notés : utilisation du dictionnaire, condition sur l'état, valeurs bornées (règle « les valeurs restent cohérentes »), fonction réutilisable. Dans l'API, cette fonction serait appelée par <code>POST /pet/feed</code> et l'erreur transformée en réponse 409 ou 400.</p>`},
+{t:'Concevoir l\'API du Tavernier',pts:'entraînement',q:`<p>Listez les routes de l'API « Tavernier RPG » (méthode, URL, rôle, code de réponse attendu) et les règles de gestion à vérifier.</p>`,r:`
+<div class="tbl"><table><tr><th>Méthode</th><th>URL</th><th>Rôle</th><th>Code</th></tr>
+<tr><td>POST</td><td>/quests</td><td>Publier une quête (nom, description, récompense)</td><td>201 (400 si données invalides)</td></tr>
+<tr><td>GET</td><td>/quests</td><td>Lister les quêtes</td><td>200</td></tr>
+<tr><td>GET</td><td>/quests/{id}</td><td>Détail d'une quête</td><td>200 ou 404</td></tr>
+<tr><td>PATCH</td><td>/quests/{id}</td><td>Changer le statut, augmenter la récompense</td><td>200, 404, ou 409 si règle violée</td></tr>
+<tr><td>DELETE</td><td>/quests/{id}</td><td>Supprimer</td><td>204 ou 404</td></tr></table></div>
+<p><b>Règles</b> : statuts possibles uniquement « disponible », « en cours », « terminée » ; une quête doit être <b>acceptée (en cours) avant d'être terminée</b> ; une quête terminée <b>ne peut plus être modifiée</b> → sinon 409 Conflict. Données en JSON, persistées (fichier JSON ou base SQLite dans un volume Docker).</p>`},
+{t:'Commandes Git du projet',pts:'entraînement',q:`<p>Vous rejoignez le dépôt du groupe. Donnez la suite de commandes pour : récupérer le projet, créer et utiliser la branche <code>develop</code>, ajouter <code>app.py</code>, faire un commit, l'envoyer sur GitHub. Comment fusionner ensuite dans <code>main</code> ?</p>`,r:`
+<pre><code>git clone https://github.com/groupe/tavernier.git
+cd tavernier
+git switch -c develop            # crée et bascule (ou git checkout -b develop)
+git add app.py
+git commit -m "Ajoute la route GET /quests"
+git push -u origin develop</code></pre>
+<p>Puis sur GitHub : ouvrir une <b>pull request develop → main</b>, laisser la CI passer (tests, lint, SAST, SCA), faire relire, puis fusionner. Avant de travailler : <code>git pull</code> pour récupérer le travail des autres.</p>`},
+{t:'Pipeline CI/CD minimum',pts:'entraînement',q:`<p>Le cahier des charges impose 3 contrôles qualité, 2 contrôles de sécurité, une image Docker construite et poussée sur Docker Hub, et aucun secret en clair. Décrivez le pipeline et justifiez chaque étape.</p>`,r:`
+<ol><li><b>Déclenchement</b> : à chaque push et pull request (<code>on: [push, pull_request]</code>).</li>
+<li><b>Qualité</b> : <code>black --check</code> (formatage homogène), <code>flake8</code> (erreurs et mauvaises pratiques), <code>pytest</code> (tests unitaires des routes et des règles de gestion).</li>
+<li><b>Sécurité</b> : <code>bandit -r .</code> (SAST : mots de passe en dur, eval, requêtes injectables) et <code>pip-audit</code> (SCA : dépendances avec CVE connues). Option : gitleaks (secrets), Trivy (image).</li>
+<li><b>Build et push</b> : <code>docker build</code> puis connexion à Docker Hub avec <code>secrets.DOCKERHUB_USERNAME</code> et <code>secrets.DOCKERHUB_TOKEN</code>, puis <code>docker push</code>, uniquement sur main si tout est vert.</li></ol>
+<p>Justification DevSecOps : chaque problème est détecté automatiquement le plus tôt possible, avant d'arriver en production, et les secrets restent dans le coffre chiffré de GitHub.</p>`}
+]
+});

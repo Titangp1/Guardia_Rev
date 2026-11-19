@@ -1,0 +1,40 @@
+rules_version = '2';
+
+// Guardia_Rev · règles de sécurité Firestore. Réalisé par Titan_gp1.
+//
+// Données :
+//   users/{uid}   pseudo (prénom affiché), progress (QCM, cartes, exercices, partiels blancs), updatedAt
+//
+// Ce que ces règles garantissent :
+//   * il faut être connecté avec une adresse @guardiaschool.fr DONT L'EMAIL EST VÉRIFIÉ
+//     (le lien de confirmation prouve que la personne possède vraiment la boîte école) ;
+//   * chacun ne lit, n'écrit et ne supprime que son propre document ;
+//   * aucun autre chemin de la base n'est accessible.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function guardia() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower().matches('^[^@]+@guardiaschool[.]fr$');
+    }
+    function owner(uid) {
+      return guardia() && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      allow read, delete: if owner(uid);
+      allow create, update: if owner(uid)
+        && request.resource.data.keys().hasOnly(['pseudo', 'progress', 'updatedAt'])
+        && request.resource.data.pseudo is string
+        && request.resource.data.pseudo.size() <= 24
+        && request.resource.data.progress is map
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
