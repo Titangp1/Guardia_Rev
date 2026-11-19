@@ -2,11 +2,11 @@
 
 <h1>Guardia_Rev</h1>
 
-<p><b>Réviser les premiers partiels de GCS1 : cours, QCM corrigés, cartes à répétition espacée, exercices type partiel, entraînements et partiel blanc.</b></p>
+<p><b>Réviser les premiers partiels de GCS1 : cours, QCM corrigés, cartes à répétition espacée, exercices type partiel, entraînements, partiel blanc, XP, classement et défis entre étudiants.</b></p>
 
 <p>
 <a href="https://titangp1.github.io/Guardia_Rev/"><img src="https://img.shields.io/badge/Ouvrir_le_site-1d6fd1?style=flat-square&logo=githubpages&logoColor=white" alt="Ouvrir le site"></a>
-<img src="https://img.shields.io/badge/version-2.1.0-1f2937?style=flat-square" alt="Version 2.0.0">
+<img src="https://img.shields.io/badge/version-3.0.0-1f2937?style=flat-square" alt="Version 2.0.0">
 <img src="https://img.shields.io/badge/acc%C3%A8s-%40guardiaschool.fr-a77d2f?style=flat-square" alt="Accès @guardiaschool.fr">
 </p>
 
@@ -35,7 +35,12 @@ Les questions et exercices tirés des anciens sujets sont marqués « Partiel 20
 
 | Fonction | Détail |
 |:--|:--|
-| **Tableau de bord** | Série de jours, activité sur 14 jours, maîtrise globale, compte à rebours avant les partiels, liste « À faire maintenant » |
+| **XP et niveaux** | +10 XP par bonne réponse, +3 par carte, +15 par section lue, +40 par exercice, +5 par entraînement, bonus de série ; niveaux de « Script kiddie » à « RSSI » |
+| **Badges** | 13 badges (série de 7 jours, sans faute, 100 cartes, masque d'or, gladiateur…) |
+| **Profil** | Photo (recadrée en 192 px), pseudo, groupe, bio, apparition ou non dans le classement |
+| **Classement** | Podium, rang, nombre d'étudiants inscrits, profils publics des joueurs |
+| **Défis** | Duel sur les mêmes 10 questions : meilleur score gagne, le temps départage, +70 XP à la victoire |
+| **Tableau de bord** | Grille « bento » : niveau et XP, série, classement, défis à relever, activité, maîtrise, compte à rebours, « À faire maintenant » |
 | **Cours** | Sommaire, sections à cocher « lu », impression propre (PDF) |
 | **QCM** | Ordre aléatoire, plusieurs bonnes réponses possibles, explications, correction détaillée, « Refaire mes erreurs » |
 | **Cartes** | Répétition espacée (boîtes de Leitner : 1, 2, 4, 8, 16 jours) |
@@ -61,11 +66,11 @@ puis ouvrir <http://localhost:8000>. Pour tester sans compte Firebase : <http://
 1. *Authentication → Sign-in method* : activer **E-mail/Mot de passe** et **Google**.
 2. *Authentication → Paramètres → Domaines autorisés* : ajouter `titangp1.github.io`.
 3. *Authentication → Modèles → Validation de l'adresse e-mail* : coller `firebase/email-verification.html` (objet : « Valide ton compte Guardia_Rev »).
-4. *Firestore → Règles* : coller `firebase/firestore.rules`, puis **Publier**.
+4. *Firestore → Règles* : coller `firebase/firestore.rules`, puis **Publier**. À refaire après chaque modification du fichier (profils et défis depuis la v3).
 5. L'objet `firebaseConfig` est dans `assets/config.js`.
 6. Adresses interdites : leurs empreintes SHA-256 (email en minuscules) sont dans `blocked` de `assets/config.js` **et** dans `banned()` de `firebase/firestore.rules` ; garder les deux listes identiques.
 
-**Sécurité.** La configuration Web de Firebase est publique par conception : la protection vient des règles. Firestore n'accepte que les comptes dont l'email se termine par `@guardiaschool.fr` **et** est vérifié, et chacun ne lit et n'écrit que sa propre progression.
+**Sécurité.** La configuration Web de Firebase est publique par conception : la protection vient des règles. Firestore n'accepte que les comptes `@guardiaschool.fr` vérifiés et non bannis. La progression est privée ; le profil public (pseudo, photo, XP, badges) est visible des seuls étudiants connectés. Les XP ne peuvent que monter, de 3000 au plus par écriture, et un défi n'est lisible et jouable que par ses deux joueurs. Les XP sont calculés dans le navigateur : les règles limitent la triche sans la rendre impossible (il faudrait des Cloud Functions, offre payante).
 
 ## Structure
 
@@ -73,7 +78,7 @@ puis ouvrir <http://localhost:8000>. Pour tester sans compte Firebase : <http://
 Guardia_Rev/
 ├── index.html            application (une seule page)
 ├── assets/
-│   ├── style.css         design sobre (inspiré de shadcn/ui), thème clair et sombre
+│   ├── style.css         design Bento sombre par défaut (ui-ux-pro-max), thème clair
 │   ├── app.js            connexion, navigation, QCM, cartes, révisions, entraînements, recherche
 │   ├── config.js         domaine autorisé et configuration Firebase
 │   └── data/             une fiche par matière (cours, cartes, QCM, exercices)
@@ -88,4 +93,4 @@ Pour ajouter du contenu : éditer le fichier de la matière dans `assets/data/`.
 
 Icônes [Lucide](https://lucide.dev) (licence ISC). Polices Bricolage Grotesque, Figtree et JetBrains Mono (Google Fonts).
 
-<div align="center"><sub>Guardia_Rev · v2.1.0 · Titan_gp1</sub></div>
+<div align="center"><sub>Guardia_Rev · v3.0.0 · Titan_gp1</sub></div>
