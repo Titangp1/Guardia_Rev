@@ -4,5 +4,12 @@
    Tant que firebase vaut null, le site tourne en « mode local » : les comptes restent dans ce navigateur. */
 window.GR_CONFIG = {
   domain: 'guardiaschool.fr',
-  firebase: null
+  firebase: {
+    apiKey: 'AIzaSyAZVEPFapmL7cKCyvM1x_GPase23cy7lV8',
+    authDomain: 'guardiarev.firebaseapp.com',
+    projectId: 'guardiarev',
+    storageBucket: 'guardiarev.firebasestorage.app',
+    messagingSenderId: '315075905449',
+    appId: '1:315075905449:web:b54bbb0482262db4c7a6b8'
+  }
 };
