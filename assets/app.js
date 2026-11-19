@@ -2,7 +2,7 @@
    Réalisé par Titan_gp1. */
 (function(){
 'use strict';
-const VERSION='1.0.0';
+const VERSION='1.1.0';
 const CFG=window.GR_CONFIG||{};
 const DOMAIN=(CFG.domain||'guardiaschool.fr').toLowerCase();
 const SUBJECTS=(window.GR&&window.GR.subjects)||[];
@@ -24,7 +24,8 @@ const FR_ERR={
   'auth/wrong-password':'Email ou mot de passe incorrect.','auth/user-not-found':'Aucun compte avec cet email.',
   'auth/email-already-in-use':'Un compte existe déjà avec cet email. Connectez-vous.','auth/weak-password':'Mot de passe trop faible : 8 caractères minimum.',
   'auth/invalid-email':'Adresse email invalide.','auth/too-many-requests':'Trop de tentatives. Patientez quelques minutes.',
-  'auth/network-request-failed':'Pas de connexion réseau.','permission-denied':'Accès refusé par le serveur.'};
+  'auth/network-request-failed':'Pas de connexion réseau.','auth/unauthorized-domain':'Ce site n\'est pas encore autorisé dans Firebase (domaines autorisés).',
+  'auth/account-exists-with-different-credential':'Un compte existe déjà avec cet email : connectez-vous avec votre mot de passe.','permission-denied':'Accès refusé par le serveur.'};
 const fr=e=>{const m=FR_ERR[e&&e.code];return new Error(m||(e&&e.message)||'Erreur inconnue.')};
 function checkSignup(email,pw,pseudo){
   email=String(email||'').trim().toLowerCase();
@@ -48,6 +49,9 @@ async function firebaseBackend(fb){
     async signUp(email,pw,pseudo){const r=await U.createUserWithEmailAndPassword(auth,email,pw);
       await U.updateProfile(r.user,{displayName:pseudo});await U.sendEmailVerification(r.user);return asUser(r.user)},
     async signIn(email,pw){const r=await U.signInWithEmailAndPassword(auth,email,pw);return asUser(r.user)},
+    /* hd : Google propose directement les comptes de l'école ; le domaine est revérifié après la connexion. */
+    async google(){const p=new U.GoogleAuthProvider();p.setCustomParameters({hd:DOMAIN,prompt:'select_account'});
+      try{return asUser((await U.signInWithPopup(auth,p)).user)}catch(e){if(e.code==='auth/popup-blocked'){await U.signInWithRedirect(auth,p);return null}throw e}},
     async reload(){if(!auth.currentUser)return null;await U.reload(auth.currentUser);await auth.currentUser.getIdToken(true);return asUser(auth.currentUser)},
     resend:()=>U.sendEmailVerification(auth.currentUser),
     reset:e=>U.sendPasswordResetEmail(auth,e),
@@ -129,6 +133,8 @@ function renderAuth(){
       ${v!=='reset'?`<div class="field"><label for="pw">Mot de passe</label><input id="pw" type="password" autocomplete="${v==='signup'?'new-password':'current-password'}" required minlength="8">${v==='signup'?'<span class="hint">8 caractères minimum.</span>':''}</div>`:''}
       <button class="btn primary big" type="submit" id="go">${v==='signup'?'Créer mon compte':v==='reset'?'Envoyer le lien':'Se connecter'}</button>
     </form>
+    ${v!=='reset'&&S.api.google?`<div class="row" style="gap:10px"><span class="bar" style="flex:1;height:1px"></span><span class="muted small">ou</span><span class="bar" style="flex:1;height:1px"></span></div>
+    <button class="btn big" type="button" id="gBtn"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continuer avec Google (compte école)</button>`:''}
     <div class="row" style="justify-content:space-between">
       ${v==='login'?'<button class="linkbtn" type="button" data-v="reset">Mot de passe oublié ?</button>':'<button class="linkbtn" type="button" data-v="login">Retour à la connexion</button>'}
       <button class="btn ghost icon" type="button" id="themeA" aria-label="Changer de thème" title="Changer de thème">${ICON.theme}</button>
@@ -137,6 +143,7 @@ function renderAuth(){
   </div></div>`;
   $$('[data-v]').forEach(b=>b.onclick=()=>{S.authView=b.dataset.v;S.authMsg=null;renderAuth()});
   $('#themeA').onclick=toggleTheme;
+  const g=$('#gBtn');if(g)g.onclick=async()=>{g.disabled=true;S.authMsg=null;try{await S.api.google()}catch(err){if(err.code!=='auth/popup-closed-by-user'&&err.code!=='auth/cancelled-popup-request')showMsg('err',fr(err).message);g.disabled=false}};
   const em=$('#email');em.addEventListener('blur',()=>{if(em.value&&!emailOk(em.value))showMsg('err','Seules les adresses @'+DOMAIN+' sont acceptées.')});
   $('#authForm').onsubmit=async e=>{e.preventDefault();const go=$('#go');go.disabled=true;
     try{
