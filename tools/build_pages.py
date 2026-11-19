@@ -6,7 +6,7 @@ et la présence des données de cours changent. Usage, depuis la racine du dép�
 """
 from pathlib import Path
 
-VERSION = "4.0.0"
+VERSION = "4.1.0"
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ["isr", "supervision", "fondamentaux", "devsecops", "web", "incident", "anglais"]
 

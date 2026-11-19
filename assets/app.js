@@ -3,7 +3,7 @@
    recherche et partiel blanc. Réalisé par Titan_gp1. */
 (function(){
 'use strict';
-const VERSION='4.0.0';
+const VERSION='4.1.0';
 const CFG=window.GR_CONFIG||{};
 const DOMAIN=(CFG.domain||'guardiaschool.fr').toLowerCase();
 const META={isr:['server','#2563eb'],supervision:['activity','#d97706'],fondamentaux:['lock','#0d9488'],devsecops:['terminal','#16a34a'],web:['code','#ea580c'],incident:['alert','#7c3aed'],anglais:['languages','#db2777']};
@@ -29,7 +29,7 @@ const BLOCKED_MSG='Inscription et connexion impossibles avec cette adresse.';
 const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const fold=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const _tmp=document.createElement('div');
-const plain=h=>{_tmp.innerHTML=h;return (_tmp.textContent||'').replace(/\s+/g,' ').trim()};
+const plain=h=>{_tmp.innerHTML=String(h==null?'':h).replace(/></g,'> <');return (_tmp.textContent||'').replace(/\s+/g,' ').trim()};
 const pad2=n=>String(n).padStart(2,'0');
 const dayKey=(d=new Date())=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
 const addDays=(k,n)=>{const [y,m,d]=k.split('-').map(Number);return dayKey(new Date(y,m-1,d+n))};
@@ -93,7 +93,7 @@ const ic=(n,c='')=>`<svg class="ico ${c}" viewBox="0 0 24 24" aria-hidden="true"
 const GLOGO='<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
 const LOGO='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M17.5 7.5A7 7 0 1 0 19 13h-7"/></svg>';
 const subjIco=(s,size=44)=>`<span class="subj-ico" style="--c:${s.col};width:${size}px;height:${size}px">${ic(s.ic,size<36?'sm':'')}</span>`;
-const tic=(name,col)=>`<span class="t-ic" style="background:color-mix(in srgb,${col} 18%,transparent);color:${col}">${ic(name)}</span>`;
+const tic=name=>`<span class="t-ic">${ic(name)}</span>`;
 
 /* ================= Niveaux, XP et badges ================= */
 const LV_T=n=>50*n*(n-1); /* XP pour atteindre le niveau n : 0, 100, 300, 600, 1000, 1500… */
@@ -117,12 +117,13 @@ const FR_ERR={
   'auth/account-exists-with-different-credential':'Un compte existe déjà avec cet email : connectez-vous avec votre mot de passe.',
   'permission-denied':'Accès refusé par le serveur.'};
 const fr=e=>{const m=FR_ERR[e&&e.code];return new Error(m||(e&&e.message)||'Erreur inconnue.')};
+const PSEUDO_RE=/^[\p{L}0-9 _.'’-]{2,24}$/u,PSEUDO_MSG='Le pseudo doit faire 2 à 24 caractères : lettres, chiffres, espaces, apostrophes, points ou tirets.';
 function checkSignup(email,pw,pseudo){
   email=String(email||'').trim().toLowerCase();
   if(!emailOk(email))throw new Error('Utilisez votre adresse école : prenom.nom@'+DOMAIN);
   if(String(pw||'').length<8)throw new Error('Le mot de passe doit faire au moins 8 caractères.');
   pseudo=String(pseudo||'').trim();
-  if(!/^[\p{L}0-9 _.-]{2,24}$/u.test(pseudo))throw new Error('Le prénom affiché doit faire 2 à 24 caractères.');
+  if(!PSEUDO_RE.test(pseudo))throw new Error(PSEUDO_MSG);
   return {email,pseudo};
 }
 
@@ -212,8 +213,8 @@ function saveSoon(){clearTimeout(S.saving);S.saving=setTimeout(saveNow,700)}
 async function saveNow(){if(!S.user||!S.user.verified)return;const uid=S.user.id;
   try{await S.api.save(uid,{pseudo:myProfile().pseudo,progress:prog()})}catch(e){console.error(e);toast('Progression non enregistrée : '+fr(e).message)}
   try{await S.api.saveProfile(uid,profileDoc(),!S.meExists);S.meExists=true}catch(e){console.error('profil',e)}}
-function addXp(n,why,quiet){if(!n)return;const p=prog(),before=levelOf(xpTotal()).n;p._xp=xpTotal()+n;const L=levelOf(p._xp);
-  if(L.n>before)toast(`Niveau ${L.n} atteint : ${L.title} !`,'xp');else if(!quiet&&why)toast(`+${n} XP · ${why}`,'xp');saveSoon()}
+function addXp(n,why,quiet){if(!n)return;const p=prog(),B=levelOf(xpTotal()),before=B.n;p._xp=xpTotal()+n;const L=levelOf(p._xp);
+  if(L.n>before)toast(`Niveau ${L.n} atteint !${L.title!==B.title?' Nouveau titre : '+L.title+'.':''}`,'xp');else if(!quiet&&why)toast(`+${n} XP · ${why}`,'xp');saveSoon()}
 function bump(n=1){const a=glob('_act',{}),k=dayKey(),first=!a[k];a[k]=(a[k]||0)+n;
   const keys=Object.keys(a).sort();if(keys.length>120)keys.slice(0,keys.length-120).forEach(x=>delete a[x]);
   const st=streak();prog()._bestStreak=Math.max(prog()._bestStreak||0,st);
@@ -267,12 +268,16 @@ function loadSocial(force){const so=S.soc;if(so.loading||(!force&&Date.now()-so.
 function duelOutcome(c,meFrom){const a=meFrom?c.fromScore:c.toScore,b=meFrom?c.toScore:c.fromScore;if(a!==b)return a>b?'win':'lose';
   const ta=meFrom?c.fromTime:c.toTime,tb=meFrom?c.toTime:c.fromTime;return ta===tb?'draw':(ta<tb?'win':'lose')}
 /* Résultats des défis envoyés : XP et victoires attribués une seule fois. */
-function settleDuels(){const uid=S.user.id,seen=glob('_duelsSeen',[]);let changed=false;
+function settleDuels(){const uid=S.user.id,seen=glob('_duelsSeen',[]),started=glob('_duelStarted',[]),R=glob('_duelRes',{});let changed=false;S.forfeit=S.forfeit||{};
+  /* Défi reçu commencé mais jamais terminé (page fermée, onglet quitté) : on renvoie le résultat s'il existe, sinon il compte comme perdu. */
+  (S.soc.chals||[]).forEach(c=>{if(c.to!==uid||c.status!=='pending'||!started.includes(c.id)||S.forfeit[c.id]||(QZ&&QZ.duel&&QZ.duel.c&&QZ.duel.c.id===c.id))return;
+    if(R[c.id]){S.forfeit[c.id]=1;S.api.answerChallenge(c.id,R[c.id]).then(()=>loadSocial(true)).catch(()=>{delete S.forfeit[c.id]})}
+    else forfeitDuel(c,`Défi de ${c.fromName} non terminé : il compte comme perdu.`)});
   (S.soc.chals||[]).forEach(c=>{if(c.from!==uid||c.status!=='done'||seen.includes(c.id))return;seen.push(c.id);changed=true;
     const r=duelOutcome(c,true);if(r==='win'){prog()._duelWins=(prog()._duelWins||0)+1;addXp(70,'Défi gagné contre '+c.toName)}
     else toast(r==='draw'?`Égalité avec ${c.toName}.`:`${c.toName} a gagné votre défi (${c.toScore}/${c.qids.length}).`)});
   if(seen.length>200)seen.splice(0,seen.length-200);if(changed)saveSoon()}
-function incoming(){const uid=S.user.id;return (S.soc.chals||[]).filter(c=>c.to===uid&&c.status==='pending')}
+function incoming(){const uid=S.user.id;return (S.soc.chals||[]).filter(c=>c.to===uid&&c.status==='pending'&&!(S.forfeit||{})[c.id])}
 function freshTop(){const me=myProfile();return (S.soc.top||[]).map(p=>p.id===me.id?{...p,...me}:p).sort((a,b)=>b.xp-a.xp)}
 function playersList(){const uid=S.user.id;return (S.soc.top||[]).filter(p=>p.id!==uid&&!p.hidden)}
 
@@ -298,7 +303,7 @@ async function boot(){
     S.ready=true;render();
   });
   document.addEventListener('keydown',onKey);
-  window.addEventListener('beforeunload',e=>{if(QZ&&!QZ.done&&QZ.answers.length){e.preventDefault();e.returnValue=''}});
+  window.addEventListener('beforeunload',e=>{if(QZ&&!QZ.done&&(QZ.answers.length||(QZ.duel&&QZ.duel.mode==='answer'))){e.preventDefault();e.returnValue=''}});
 }
 
 /* ================= Connexion (obligatoire) ================= */
@@ -306,8 +311,8 @@ function brandBlock(){return `<div class="brand" style="padding:0"><span class="
 function msgBlock(){const m=S.authMsg;return `<div class="msg ${m?m.k:''}" id="authMsg" role="alert" ${m?'':'hidden'}>${m?esc(m.t):''}</div>`}
 function showMsg(k,t){S.authMsg={k,t};const m=$('#authMsg');if(m){m.className='msg '+k;m.textContent=t;m.hidden=false}else renderAuth()}
 function authArt(){return `<aside class="auth-art" aria-hidden="true"><div class="brand" style="color:#fff"><span class="brand-mark" style="background:rgba(255,255,255,.16)">${LOGO}</span><span><b>Guardia_Rev</b><small style="color:rgba(255,255,255,.75)">GCS1 · Guardia Cybersecurity School</small></span></div>
-  <div style="display:grid;gap:16px"><h2>Révise. Progresse. Défie ta promo.</h2><p>Cours, QCM corrigés et anciens partiels, cartes à répétition espacée, XP, classement et duels entre étudiants.</p></div>
-  <ul><li><span class="ic">${ic('bookOpen')}</span>7 matières, plus de 200 questions de QCM</li><li><span class="ic">${ic('trophy')}</span>XP, niveaux, badges et classement de la promo</li><li><span class="ic">${ic('swords')}</span>Défie un camarade sur les mêmes questions</li></ul></aside>`}
+  <div style="display:grid;gap:16px"><h2>Révisez. Progressez. Défiez votre promo.</h2><p>Cours, QCM corrigés et anciens partiels, cartes à répétition espacée, XP, classement et duels entre étudiants.</p></div>
+  <ul><li><span class="ic">${ic('bookOpen')}</span>7 matières, plus de 200 questions de QCM</li><li><span class="ic">${ic('trophy')}</span>XP, niveaux, badges et classement de la promo</li><li><span class="ic">${ic('swords')}</span>Défiez un camarade sur les mêmes questions</li></ul></aside>`}
 function renderAuth(){
   const v=S.authView,demo=S.api.mode==='local';
   if(S.user&&!S.user.verified){
@@ -326,8 +331,8 @@ function renderAuth(){
     ${v!=='reset'?`<div class="seg" role="tablist"><button type="button" role="tab" aria-selected="${v==='login'}" data-v="login">Connexion</button><button type="button" role="tab" aria-selected="${v==='signup'}" data-v="signup">Créer un compte</button></div>`:''}
     ${msgBlock()}
     <form id="authForm" class="grid" novalidate style="gap:13px">
-      ${v==='signup'?`<div class="field"><label for="pseudo">Prénom affiché</label><input class="input" id="pseudo" autocomplete="given-name" required maxlength="24" placeholder="Prénom"></div>`:''}
-      <div class="field"><label for="email">Email école</label><input class="input" id="email" type="email" autocomplete="email" required placeholder="prenom.nom@${esc(DOMAIN)}"></div>
+      ${v==='signup'?`<div class="field"><label for="pseudo">Pseudo</label><input class="input" id="pseudo" autocomplete="nickname" required maxlength="24" placeholder="ex. Alex" aria-describedby="pseudoH"><span class="hint2" id="pseudoH">Visible dans le classement et les défis.</span></div>`:''}
+      <div class="field"><label for="email">Email école</label><input class="input" id="email" type="email" autocomplete="email" aria-describedby="authMsg" required placeholder="prenom.nom@${esc(DOMAIN)}"></div>
       ${v!=='reset'?`<div class="field"><label for="pw">Mot de passe</label><div class="pw"><input class="input" id="pw" type="password" autocomplete="${v==='signup'?'new-password':'current-password'}" required minlength="8"><button type="button" id="pwT" aria-label="Afficher le mot de passe" aria-pressed="false">${ic('eye')}</button></div>${v==='signup'?'<span class="hint2">8 caractères minimum.</span>':''}</div>`:''}
       <button class="btn primary lg" type="submit" id="go">${v==='signup'?'Créer mon compte':v==='reset'?'Envoyer le lien':'Se connecter'}</button>
     </form>
@@ -340,7 +345,8 @@ function renderAuth(){
   $('#themeA').onclick=()=>{toggleTheme();renderAuth()};
   const pt=$('#pwT');if(pt)pt.onclick=()=>{const i=$('#pw'),show=i.type==='password';i.type=show?'text':'password';pt.setAttribute('aria-pressed',String(show));pt.setAttribute('aria-label',show?'Masquer le mot de passe':'Afficher le mot de passe');pt.innerHTML=ic(show?'eyeOff':'eye');i.focus()};
   const g=$('#gBtn');if(g)g.onclick=async()=>{g.disabled=true;S.authMsg=null;try{await S.api.google()}catch(err){if(err.code!=='auth/popup-closed-by-user'&&err.code!=='auth/cancelled-popup-request')showMsg('err',fr(err).message);g.disabled=false}};
-  const em=$('#email');em.addEventListener('blur',()=>{if(em.value&&!emailOk(em.value))showMsg('err','Seules les adresses @'+DOMAIN+' sont acceptées.')});
+  const em=$('#email');em.addEventListener('blur',()=>{const bad=!!em.value&&!emailOk(em.value);em.setAttribute('aria-invalid',String(bad));if(bad)showMsg('err','Seules les adresses @'+DOMAIN+' sont acceptées.')});
+  em.addEventListener('input',()=>{if(em.getAttribute('aria-invalid')==='true'&&emailOk(em.value))em.setAttribute('aria-invalid','false')});
   $('#authForm').onsubmit=async e=>{e.preventDefault();const go=$('#go'),lbl=go.textContent;go.disabled=true;go.textContent=v==='signup'?'Création du compte…':v==='reset'?'Envoi…':'Connexion…';
     try{
       if(v==='signup'){const c=checkSignup(em.value,$('#pw').value,$('#pseudo').value);if(await isBlocked(c.email))throw new Error(BLOCKED_MSG);S.authMsg=null;await S.api.signUp(c.email,$('#pw').value,c.pseudo)}
@@ -368,34 +374,43 @@ function crumbs(items){return `<nav class="crumbs" aria-label="Fil d'Ariane">${i
 function route(){return {page:PAGE}}
 function layout(inner,r){
   const due=totalDue(),wrong=totalWrong(),inc=incoming().length,me=myProfile(),L=levelOf(me.xp);
-  const pages=[['accueil','index.html','home','Tableau de bord'],['revisions','revisions.html','clock','Révisions du jour',due+wrong],['matieres','matieres.html','bookOpen','Matières'],['partiel','partiel.html','grad','Partiel blanc'],['entrainements','entrainements.html','zap','Entraînements'],['lexique','lexique.html','book','Lexique']];
+  /* Pendant un défi ou un partiel blanc, on masque la navigation : rien ne doit distraire. */
+  const focus=!!(QZ&&!QZ.done&&(QZ.ctx==='partiel'||QZ.ctx==='duel'));
+  const revise=[['accueil','index.html','home','Tableau de bord'],['revisions','revisions.html','clock','Révisions du jour',due+wrong],['partiel','partiel.html','grad','Partiel blanc'],['entrainements','entrainements.html','zap','Entraînements'],['lexique','lexique.html','book','Lexique']];
   const social=[['defis','defis.html','swords','Défis',inc],['classement','classement.html','trophy','Classement']];
   const link=([p,h,i,l,c])=>`<a href="${h}" ${PAGE===p?'aria-current="page"':''}>${ic(i)}<span>${l}</span>${c?`<span class="count" aria-label="${c} en attente">${c}</span>`:''}</a>`;
-  const nav=pages.map(link).join('')+'</nav><div class="nav-h">Communauté</div><nav class="nav">'+social.map(link).join('');
-  const subs=SUBJECTS.map(s=>`<a href="${U.sub(s.id)}" ${SUBJECT_PAGES.includes(PAGE)&&qp('m')===s.id?'aria-current="page"':''}><span class="dot" style="background:${s.col}"></span><span>${esc(s.name)}</span><span class="pct">${stats(s).pct}%</span></a>`).join('');
-  const bn=[['accueil','index.html','home','Accueil'],['revisions','revisions.html','clock','Réviser',due+wrong],['defis','defis.html','swords','Défis',inc],['classement','classement.html','trophy','Classement']];
-  return `<a class="skip" href="#main" id="skip">Aller au contenu</a><div class="app ${S.menu?'open':''}" id="app">
-    <header class="mtop"><button class="btn ghost icon" id="menuBtn" aria-label="Menu">${ic('menu')}</button><a class="brand" href="index.html"><span class="brand-mark">${LOGO}</span><b>Guardia_Rev</b></a><button class="btn ghost icon" data-search aria-label="Rechercher">${ic('search')}</button><a href="profil.html" aria-label="Mon profil">${avatar(me,32)}</a></header>
-    <aside class="side" aria-label="Navigation">
+  const subs=`<a href="matieres.html" ${PAGE==='matieres'?'aria-current="page"':''}>${ic('bookOpen')}<span>Toutes les matières</span></a>`
+    +SUBJECTS.map(s=>`<a href="${U.sub(s.id)}" ${SUBJECT_PAGES.includes(PAGE)&&qp('m')===s.id?'aria-current="page"':''}><span class="dot" style="background:${s.col}"></span><span>${esc(s.name)}</span><span class="pct">${stats(s).pct}%</span></a>`).join('');
+  const inSubj=PAGE==='matieres'||SUBJECT_PAGES.includes(PAGE);
+  const bn=[['accueil','index.html','home','Accueil',0,PAGE==='accueil'],['revisions','revisions.html','clock','Réviser',due+wrong,PAGE==='revisions'],['matieres','matieres.html','bookOpen','Matières',0,inSubj],['defis','defis.html','swords','Défis',inc,PAGE==='defis']];
+  return `<a class="skip" href="#main" id="skip">Aller au contenu</a><div class="app ${S.menu?'open':''} ${focus?'focus':''}" id="app">
+    <header class="mtop"><button class="btn ghost icon" id="menuBtn" aria-label="Ouvrir le menu" aria-controls="side" aria-expanded="${S.menu}">${ic('menu')}</button><a class="brand" href="index.html"><span class="brand-mark">${LOGO}</span><b>Guardia_Rev</b></a><button class="btn ghost icon" data-search aria-label="Rechercher">${ic('search')}</button><a href="profil.html" aria-label="Mon profil">${avatar(me,32)}</a></header>
+    <aside class="side" id="side" aria-label="Navigation">
       <a class="brand" href="index.html"><span class="brand-mark">${LOGO}</span><span><b>Guardia_Rev</b><small>Révisions · GCS1</small></span></a>
-      <a class="me" href="profil.html" ${PAGE==='profil'?'aria-current="page"':''}><div class="row">${ringAv(me,40)}<div style="min-width:0"><b>${esc(me.pseudo)}</b><span class="t">Niv. ${L.n} · ${esc(L.title)}</span></div></div>
-        <div class="xpbar" role="progressbar" aria-label="Progression du niveau" aria-valuenow="${L.pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${L.pct}%"></i></div><div class="xpl"><span>${fmt(me.xp)} XP</span><span>${fmt(L.left)} avant niv. ${L.n+1}</span></div></a>
+      <a class="me" href="profil.html" ${PAGE==='profil'?'aria-current="page"':''}><div class="row">${ringAv(me,40)}<div style="min-width:0"><b>${esc(me.pseudo)}</b><span class="t">Niveau ${L.n} · ${esc(L.title)}</span></div></div>
+        <div class="xpbar" role="progressbar" aria-label="Progression du niveau" aria-valuenow="${L.pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${L.pct}%"></i></div><div class="xpl"><span>${fmt(me.xp)} XP</span><span>niveau ${L.n+1} dans ${fmt(L.left)}</span></div></a>
       <button class="searchbtn" data-search>${ic('search','sm')}<span>Rechercher…</span><kbd>Ctrl K</kbd></button>
-      <nav class="nav">${nav}</nav>
-      <div class="nav-h">Matières</div><nav class="nav">${subs}</nav>
-      <div class="side-foot"><span>v${VERSION} · ${S.api.mode==='local'?'mode local':'synchronisé'}</span><button class="btn ghost icon" id="themeB" aria-label="Changer de thème" title="Changer de thème">${ic(isDark()?'sun':'moon')}</button></div>
+      <div class="nav-h">Réviser</div><nav class="nav" aria-label="Réviser">${revise.map(link).join('')}</nav>
+      <div class="nav-h">Matières</div><nav class="nav" aria-label="Matières">${subs}</nav>
+      <div class="nav-h">Communauté</div><nav class="nav" aria-label="Communauté">${social.map(link).join('')}</nav>
+      <div class="side-foot"><button class="btn ghost sm" id="sideOut">${ic('logout','sm')}Se déconnecter</button><button class="btn ghost icon" id="themeB" aria-label="${isDark()?'Passer en thème clair':'Passer en thème sombre'}" title="Changer de thème">${ic(isDark()?'sun':'moon')}</button></div>
     </aside>
     ${S.menu?'<div class="scrim" id="scrim"></div>':''}
-    <nav class="bnav" aria-label="Navigation principale">${bn.map(([p,h,i,l,c])=>`<a href="${h}" ${PAGE===p?'aria-current="page"':''}>${ic(i)}<span>${l}</span>${c?`<span class="count">${c}</span>`:''}</a>`).join('')}<button type="button" id="bMenu" aria-label="Ouvrir le menu">${ic('menu')}<span>Menu</span></button></nav>
-    <main class="main ${S.fadeOn?'fade':''}" id="main" tabindex="-1">${inner}<footer class="credit">Guardia_Rev v${VERSION} · Réalisé par <b>Titan_gp1</b></footer></main>
+    <nav class="bnav" aria-label="Navigation principale">${bn.map(([p,h,i,l,c,on])=>`<a href="${h}" ${on?'aria-current="page"':''}>${ic(i)}<span>${l}</span>${c?`<span class="count" aria-label="${c} en attente">${c}</span>`:''}</a>`).join('')}<button type="button" id="bMenu" aria-label="Ouvrir le menu" aria-controls="side" aria-expanded="${S.menu}">${ic('menu')}<span>Menu</span></button></nav>
+    <main class="main ${S.fadeOn?'fade':''}" id="main" tabindex="-1">${inner}<footer class="credit">Guardia_Rev v${VERSION} · Réalisé par <b>Titan_gp1</b>${S.api.mode==='local'?' · mode local':''}</footer></main>
   </div>`;
 }
 const AFTER=[];
+/* render() reconstruit la page : on mémorise l'élément qui avait le focus pour le lui rendre ensuite. */
+function focusKey(el){if(!el||el===document.body||!root.contains(el)||el.id==='main')return null;
+  if(el.id)return '#'+CSS.escape(el.id);
+  for(const a of el.attributes)if(a.name.startsWith('data-')&&a.name!=='data-search')return `[${a.name}="${CSS.escape(a.value)}"]`;return null}
 function render(){
   if(!S.ready)return;
   if(!S.user||!S.user.verified){renderAuth();return}
   if(PAGE==='connexion'){renderAuth();return}
-  S.onKey=null;const r=route();let html;S.fadeOn=!S.rendered;
+  const fk=S.rendered?focusKey(document.activeElement):null;
+  S.onKey=null;S.title=null;const r=route();let html;S.fadeOn=!S.rendered;
   try{
     if(SUBJECT_PAGES.includes(PAGE)){const s=subj(qp('m'));html=s?pageSubject(s,PAGE==='exercices'?'exos':PAGE):notFound('Cette matière n\'existe pas.')}
     else if(PAGE==='matieres')html=pageSubjects();
@@ -410,12 +425,15 @@ function render(){
     else html=pageHome();
   }catch(e){console.error(e);html=notFound()}
   root.innerHTML=layout(html,r);
+  if(S.title)document.title=S.title+' · Guardia_Rev';
   $('#themeB').onclick=()=>{toggleTheme();render()};
   $('#menuBtn').onclick=$('#bMenu').onclick=()=>{S.menu=!S.menu;render();if(S.menu){const a=$('.side .nav a');if(a)a.focus()}};
   $('#skip').onclick=e=>{e.preventDefault();$('#main').focus()};
-  S.rendered=true;
+  $('#sideOut').onclick=async()=>{QZ=null;FC=null;S.loggingOut=true;await S.api.signOut()};
   const sc=$('#scrim');if(sc)sc.onclick=()=>{S.menu=false;render()};
   $$('[data-search]').forEach(b=>b.onclick=openPalette);
+  if(fk){let el=$(fk);if(!el||el.disabled)el=$('#qNext')||$('#qValid:not([disabled])')||$('#cYes:not([disabled])')||$('.opt:not([disabled])');if(el)el.focus({preventScroll:true})}
+  S.rendered=true;
   AFTER.splice(0).forEach(f=>{try{f()}catch(e){console.error(e)}});
 }
 function notFound(msg){return `<section class="card pad"><h1>Page introuvable</h1><p style="margin-top:8px">${esc(msg||'Cette page n\'existe pas ou plus.')} <a href="index.html">Retour au tableau de bord</a></p></section>`}
@@ -425,66 +443,60 @@ function onKey(e){
   if(pal){paletteKey(e);return}
   const t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable))return;
   if(e.key==='/'&&S.user&&S.user.verified){e.preventDefault();openPalette();return}
-  if(e.key==='Escape'&&S.menu){S.menu=false;render();return}
+  if(e.key==='Escape'&&S.menu){S.menu=false;render();$('#menuBtn').focus();return}
   if(S.onKey&&!e.ctrlKey&&!e.metaKey&&!e.altKey)S.onKey(e);
 }
 
 /* ================= Tableau de bord ================= */
+/* La prochaine chose à faire, dans l'ordre : cartes échues, erreurs, défis reçus, prochaine section, entraînement. */
+function nextSubject(){const all=SUBJECTS.map(s=>({s,st:stats(s)})).sort((a,b)=>a.st.pct-b.st.pct);return all.find(w=>w.st.rd<w.st.nf)||all[0]}
+function firstUnread(s){return Math.max(0,s.fiche.findIndex((_,k)=>!sp(s.id).read.includes(k)))}
 function pageHome(){
   loadSocial();
-  const me=myProfile(),L=levelOf(me.xp),all=SUBJECTS.map(stats),avg=all.length?Math.round(all.reduce((a,b)=>a+b.pct,0)/all.length):0;
+  const me=myProfile(),L=levelOf(me.xp);
   const due=totalDue(),wrong=totalWrong(),st=streak(),act=glob('_act',{});
   const exam=glob('_settings',{}).examDate,left=exam?daysBetween(dayKey(),exam):null;
   const so=S.soc,inc=incoming();
-  const days=[...Array(14)].map((_,i)=>addDays(dayKey(),i-13)),max=Math.max(5,...days.map(d=>act[d]||0));
   const week=[...Array(7)].map((_,i)=>addDays(dayKey(),i-6));
-  const weak=SUBJECTS.map((s,i)=>({s,st:all[i]})).sort((a,b)=>a.st.pct-b.st.pct);
-  const next=weak.find(w=>w.st.rd<w.st.nf)||weak[0];
+  const nx=nextSubject(),ns=nx&&nx.s,ni=ns?firstUnread(ns):0;
   const todo=[];
-  if(due)todo.push(['revisions.html','layers','#2563eb',`${plural(due,'carte')} à revoir`,'Répétition espacée · +3 XP par carte']);
-  if(wrong)todo.push(['revisions.html','rotate','#dc2626',`${plural(wrong,'question ratée','questions ratées')} à refaire`,'Les QCM se souviennent de vos erreurs']);
-  if(inc.length)todo.push(['defis.html','swords','#7c3aed',`${plural(inc.length,'défi')} à relever`,'Un camarade vous attend']);
-  if(next){const i=Math.max(0,next.s.fiche.findIndex((_,k)=>!sp(next.s.id).read.includes(k)));
-    todo.push([`${U.sub(next.s.id)}#s${i}`,'bookOpen',next.s.col,`Lire : ${next.s.fiche[i]?.t||'la fiche'}`,`${next.s.name} · +15 XP`])}
-  todo.push(['entrainements.html?t=sousreseaux','network','#0d9488','Entraînement sous-réseaux','Masque, réseau, broadcast · +5 XP par réponse']);
+  if(due)todo.push(['revisions.html','layers',`${plural(due,'carte')} à revoir`,'Répétition espacée, toutes matières']);
+  if(wrong)todo.push(['revisions.html','rotate',`${plural(wrong,'question ratée','questions ratées')} à refaire`,'Une bonne réponse les retire de la liste']);
+  if(inc.length)todo.push(['defis.html','swords',`${plural(inc.length,'défi')} à relever`,'Un camarade attend votre réponse']);
+  if(ns)todo.push([`${U.sub(ns.id)}#s${ni+1}`,'bookOpen',`Lire : ${ns.fiche[ni]?.t||'le cours'}`,ns.name]);
+  todo.push(['entrainements.html?t=sousreseaux','network','Entraînement sous-réseaux','Masque, réseau, broadcast']);
+  if(todo.length<5)todo.push(['partiel.html','grad','Partiel blanc','Questions mélangées, chronométré']);
   const top5=freshTop().filter(p=>!p.hidden||p.id===me.id).slice(0,5);
   const wd=['D','L','M','M','J','V','S'];
+  const nst=ns?stats(ns):null;
   return `
-  <section class="bento">
-    <div class="card hero b3">
-      <div class="row" style="gap:18px;flex-wrap:nowrap;align-items:center">${ringAv(me,76)}
-        <div style="min-width:0"><div class="row" style="margin-bottom:6px"><span class="chip">${ic('award','sm')} Niveau ${L.n} · ${esc(L.title)}</span>${so.count!=null?`<span class="chip">${ic('users','sm')} ${plural(so.count,'étudiant inscrit','étudiants inscrits')}</span>`:''}</div>
-        <h1>Bonjour ${esc(me.pseudo)}</h1>
-        <p style="margin-top:4px">${left!=null&&left>=0?`Plus que <b>${plural(left,'jour')}</b> avant les partiels.`:'Chaque bonne réponse, carte et section lue rapporte des XP.'}</p></div></div>
-      <div><div class="row spread small" style="margin-bottom:7px;font-weight:600"><span>${fmt(me.xp)} XP</span><span>${fmt(L.left)} XP avant le niveau ${L.n+1}</span></div><div class="xpbar"><i style="width:${L.pct}%"></i></div></div>
-      <div class="row"><a class="btn white lg" href="revisions.html">${ic('clock','sm')}Réviser maintenant</a><a class="btn glass lg" href="defis.html">${ic('swords','sm')}Lancer un défi</a>${exam?'':`<a class="btn glass lg" href="profil.html">${ic('calendar','sm')}Date des partiels</a>`}</div>
-    </div>
-    <div class="card tile"><div class="t-h">${tic('flame','#f59e0b')}Série</div><div class="big">${st}<small>${st>1?'jours':'jour'}</small></div>
-      <p class="small muted">${st?'Revenez demain pour la prolonger (+10 XP par jour de série).':'Révisez aujourd\'hui pour lancer votre série.'}</p>
-      <div class="days">${week.map(d=>`<div><i class="${act[d]?'on':''} ${d===dayKey()?'today':''}">${act[d]?ic('check','sm'):''}</i>${wd[new Date(d+'T12:00').getDay()]}</div>`).join('')}</div></div>
-    <div class="card b2"><div class="pad-sm row spread" style="border-bottom:1px solid var(--border)"><h3>À faire maintenant</h3><span class="badge xp">${ic('star','sm')} XP à gagner</span></div>
-      <div style="padding:6px">${todo.slice(0,5).map(([h,i,c,t,s])=>`<a class="todo" href="${h}">${tic(i,c).replace('t-ic','t-ic')}<span class="t-txt"><b>${esc(t)}</b><span>${esc(s)}</span></span><span class="go">${ic('chevron','sm')}</span></a>`).join('')}</div></div>
-    <div class="card tile"><div class="t-h">${tic('trophy','#f59e0b')}Classement</div>
-      <div class="big">${so.rank?'#'+so.rank:'—'}<small>${so.count?'sur '+so.count:''}</small></div>
-      <div class="mini-lb">${top5.length?top5.map((p,i)=>`<a href="${U.player(p.id)}" class="${p.id===me.id?'me-row':''}"><span class="rk">${i+1}</span>${avatar(p,26)}<span class="nm">${esc(p.pseudo)}</span><span class="xpv">${fmt(p.xp)}</span></a>`).join(''):`<p class="small muted">${so.loading||so.top==null?'Chargement…':'Personne pour l\'instant.'}</p>`}</div>
-      <a class="btn sm" href="classement.html" style="margin-top:auto">Voir tout</a></div>
-    <div class="card tile"><div class="t-h">${tic('swords','#7c3aed')}Défis</div>
-      <div class="big">${inc.length}<small>à relever</small></div>
-      <p class="small muted">Même série de questions pour les deux : le meilleur score gagne (+70 XP).</p>
-      <a class="btn ${inc.length?'primary':''} sm" href="defis.html" style="margin-top:auto">${inc.length?'Relever':'Défier quelqu\'un'}</a></div>
-    <div class="card tile b2"><div class="row spread"><div class="t-h">${tic('activity','#2563eb')}Activité sur 14 jours</div><span class="badge">${days.reduce((n,d)=>n+(act[d]||0),0)} actions</span></div>
-      <div class="chart" aria-label="Activité des 14 derniers jours">${days.map(d=>`<i class="${act[d]?'':'z'}" style="height:${Math.max(5,Math.round(100*(act[d]||0)/max))}%" title="${d} : ${act[d]||0}"></i>`).join('')}</div></div>
-    <div class="card tile"><div class="t-h">${tic('layers','#0d9488')}À revoir</div><div class="big">${due+wrong}</div><p class="small muted">${plural(due,'carte')} · ${plural(wrong,'erreur')}</p><a class="btn sm" href="revisions.html" style="margin-top:auto">Réviser</a></div>
-    <div class="card tile"><div class="t-h">${tic('target','#16a34a')}Maîtrise globale</div><div class="row" style="gap:14px"><span class="pring" style="--p:${avg};--c:#16a34a"><span>${avg}%</span></span><p class="small muted">Moyenne des cours lus, QCM, cartes et exercices.</p></div></div>
+  <section class="card hero">
+    <div class="row" style="gap:18px;flex-wrap:nowrap;align-items:center">${ringAv(me,64)}
+      <div style="min-width:0"><div class="row" style="margin-bottom:6px"><span class="chip">${ic('award','sm')} Niveau ${L.n} · ${esc(L.title)}</span>${so.count!=null?`<span class="chip">${ic('users','sm')} ${plural(so.count,'étudiant inscrit','étudiants inscrits')}</span>`:''}</div>
+      <h1>Bonjour ${esc(me.pseudo)}</h1>
+      <p style="margin-top:4px">${left!=null&&left>=0?`Plus que <b>${plural(left,'jour')}</b> avant les partiels.`:'Voici ce qui vous attend aujourd\'hui.'}${exam?'':` <a href="profil.html#examDate">Ajouter la date des partiels</a>`}</p></div></div>
+    <div class="row"><a class="btn white lg" href="revisions.html">${ic('clock','sm')}Réviser maintenant</a><a class="btn glass lg" href="defis.html">${ic('swords','sm')}Lancer un défi</a></div>
   </section>
-  <section><div class="section-h"><h2>Matières</h2><span class="muted small">${SUBJECTS.length} matières · ${SUBJECTS.reduce((n,s)=>n+s.quiz.length,0)} questions</span></div>
-  <div class="grid g3" style="margin-top:12px">${SUBJECTS.map(subjCard).join('')}</div></section>`;
+  <section class="bento">
+    <div class="card b2"><div class="pad-sm" style="border-bottom:1px solid var(--border)"><h2>À faire maintenant</h2></div>
+      <div style="padding:6px">${todo.slice(0,5).map(([h,i,t,s])=>`<a class="todo" href="${h}">${tic(i)}<span class="t-txt"><b>${esc(t)}</b><span>${esc(s)}</span></span><span class="go">${ic('chevron','sm')}</span></a>`).join('')}</div></div>
+    ${ns?`<div class="card tile b2"><div class="t-h">${subjIco(ns,32)}Reprendre</div>
+      <h3 style="font-size:18px">${esc(ns.name)}</h3>
+      <p class="small muted">${nst.rd}/${nst.nf} sections lues · ${nst.runs?'meilleur QCM '+nst.best+' %':'QCM pas encore fait'} · ${nst.mast}/${nst.nc} cartes sues</p>
+      <div class="progress" role="progressbar" aria-label="Maîtrise de ${esc(ns.name)}" aria-valuenow="${nst.pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${nst.pct}%;background:${ns.col}"></i></div>
+      <div class="row" style="margin-top:auto"><a class="btn primary" href="${U.sub(ns.id)}#s${ni+1}">Continuer le cours</a><a class="btn" href="${U.sub(ns.id,'qcm')}">Faire le QCM</a><a class="btn ghost" href="matieres.html">Toutes les matières</a></div></div>`:''}
+    <div class="card tile b2"><div class="t-h">${tic('flame')}Série</div><div class="big">${st}<small>${st>1?'jours':'jour'} d'affilée</small></div>
+      <p class="small muted">${st?'Révisez chaque jour pour la prolonger.':'Révisez aujourd\'hui pour lancer votre série.'}</p>
+      <div class="days" aria-label="Activité des 7 derniers jours">${week.map(d=>`<div><i class="${act[d]?'on':''} ${d===dayKey()?'today':''}">${act[d]?ic('check','sm'):''}</i><span aria-hidden="true">${wd[new Date(d+'T12:00').getDay()]}</span></div>`).join('')}</div></div>
+    <div class="card tile b2"><div class="row spread"><div class="t-h">${tic('trophy')}Classement</div><a class="btn ghost sm" href="classement.html">Voir tout</a></div>
+      ${so.count>1?`<div class="big">#${so.rank||'—'}<small>sur ${so.count}</small></div>`:''}
+      <div class="mini-lb">${top5.length>1?top5.map((p,i)=>`<a href="${U.player(p.id)}" class="${p.id===me.id?'me-row':''}"><span class="rk">${i+1}</span>${avatar(p,26)}<span class="nm">${esc(p.pseudo)}${p.id===me.id?' (vous)':''}</span><span class="xpv">${fmt(p.xp)} XP</span></a>`).join(''):`<p class="small muted">${so.top==null?'Chargement…':'Vous êtes le premier inscrit. Partagez le site avec votre promo pour vous mesurer à elle.'}</p>`}</div></div>
+  </section>`;
 }
 function subjCard(s){const st=stats(s);return `<a class="card subj" href="${U.sub(s.id)}" style="--c:${s.col}">
-  <div class="row spread">${subjIco(s)}<span class="pring" style="--p:${st.pct};--c:${s.col}"><span>${st.pct}%</span></span></div>
+  <div class="row spread">${subjIco(s)}<span class="pring" style="--p:${st.pct};--c:${s.col}" aria-label="Maîtrise ${st.pct} %"><span>${st.pct}%</span></span></div>
   <div><h3>${esc(s.name)}</h3><p style="margin-top:5px">${esc(s.short)}</p></div>
   <div class="meta"><span><b>${st.rd}/${st.nf}</b> cours</span><span><b>${st.runs?st.best+'%':'—'}</b> QCM</span><span><b>${st.mast}/${st.nc}</b> cartes</span></div></a>`}
-
 function pageSubjects(){
   const all=SUBJECTS.map(stats),tq=SUBJECTS.reduce((n,s)=>n+s.quiz.length,0),tc=SUBJECTS.reduce((n,s)=>n+s.cards.length,0),tf=SUBJECTS.reduce((n,s)=>n+s.fiche.length,0);
   return crumbs([['Accueil','index.html'],['Matières','']])+`<section class="head"><div><h1>Matières</h1><p class="lede">${SUBJECTS.length} matières, ${tf} sections de cours, ${tq} questions de QCM et ${tc} cartes. Chaque matière a son cours, son QCM, ses cartes et ses exercices type partiel.</p></div></section>
@@ -499,68 +511,74 @@ function pageSubject(s,tab){
   const tabs=[['cours','bookOpen','Cours',s.fiche.length],['qcm','circleCheck','QCM',s.quiz.length],['cartes','layers','Cartes',s.cards.length],['exos','pencil','Exercices',s.exos.length]];
   let body;if(tab==='qcm')body=quizView(s);else if(tab==='cartes')body=cardsView(s);else if(tab==='exos')body=exosView(s);else body=ficheView(s);
   const tabName={cours:'Cours',qcm:'QCM',cartes:'Cartes',exos:'Exercices'}[tab];
+  S.title=s.name+' – '+tabName;
   AFTER.push(()=>{const p=$('#print');if(p)p.onclick=()=>window.print()});
-  return crumbs([['Accueil','index.html'],['Matières','matieres.html'],[s.name,U.sub(s.id)],[tabName,'']])+`<section class="card pad grid subj-head" style="gap:16px;--c:${s.col}">
-    <div class="head"><div class="row" style="gap:16px;flex-wrap:nowrap">${subjIco(s,52)}<div><p class="eyebrow" style="margin:0 0 4px">${esc(s.exam||'Matière')}</p><h1>${esc(s.name)}</h1></div></div>
-      <div class="row"><span class="pring" style="--p:${st.pct};--c:${s.col}"><span>${st.pct}%</span></span>${tab==='cours'?`<button class="btn sm no-print" id="print">${ic('printer','sm')}Imprimer</button>`:''}</div></div>
-    ${s.intro?`<p class="muted" style="max-width:80ch">${s.intro}</p>`:''}
-    <nav class="tabs">${tabs.map(([k,i,l,n])=>`<a href="${U.sub(s.id,k)}" ${tab===k?'aria-current="page"':''}>${ic(i,'sm')}${l}<span class="badge">${n}</span></a>`).join('')}</nav>
+  /* En-tête complet sur le cours ; compact sur QCM, cartes et exercices pour laisser la place au contenu. */
+  const full=tab==='cours';
+  return crumbs([['Accueil','index.html'],['Matières','matieres.html'],[s.name,U.sub(s.id)],[tabName,'']])+`<section class="card ${full?'pad':'pad-sm'} grid subj-head" style="gap:${full?16:12}px;--c:${s.col}">
+    <div class="head"><div class="row" style="gap:${full?16:12}px;flex-wrap:nowrap">${subjIco(s,full?48:36)}<div>${full?`<p class="eyebrow" style="margin:0 0 4px">${esc(s.exam||'Matière')}</p>`:''}<h1 ${full?'':'style="font-size:20px"'}>${esc(s.name)}</h1></div></div>
+      <div class="row"><span class="pring" style="--p:${st.pct};--c:${s.col}" aria-label="Maîtrise ${st.pct} %"><span>${st.pct}%</span></span>${full?`<button class="btn sm no-print" id="print">${ic('printer','sm')}Imprimer</button>`:''}</div></div>
+    ${full&&s.intro?`<p class="muted" style="max-width:80ch">${s.intro}</p>`:''}
+    <nav class="tabs" aria-label="Sections de la matière">${tabs.map(([k,i,l,n])=>`<a href="${U.sub(s.id,k)}" ${tab===k?'aria-current="page"':''}>${ic(i,'sm')}${l}<span class="badge">${n}</span></a>`).join('')}</nav>
   </section>${body}`;
 }
 function ficheView(s){
   const p=sp(s.id);
   AFTER.push(()=>{
-
     $$('[data-read]').forEach(b=>b.onclick=()=>{const i=+b.dataset.read,set=new Set(p.read);if(set.has(i))set.delete(i);else{set.add(i);bump();giveOnce(s.id,'r'+i,15,'Section lue')}p.read=[...set];saveSoon();
       const y=window.scrollY;render();window.scrollTo(0,y)});
     if(/^#s\d+$/.test(location.hash)&&!S.scrolled){S.scrolled=true;const t=$(location.hash);if(t)setTimeout(()=>t.scrollIntoView({block:'start'}),30)}
   });
   return `<div class="fiche">
-    <nav class="card toc no-print" aria-label="Sommaire"><div class="small muted" style="padding:4px 9px 8px;font-weight:600">${p.read.length}/${s.fiche.length} sections lues</div>
-      ${s.fiche.map((f,i)=>`<a href="#s${i}" class="${p.read.includes(i)?'read':''}"><span class="tick">${p.read.includes(i)?ic('check','sm'):''}</span>${esc(f.t)}</a>`).join('')}</nav>
-    <div>${s.fiche.map((f,i)=>`<article class="card pad sec" id="s${i}"><h2><span class="num" aria-hidden="true">${pad2(i+1)}</span>${esc(f.t)}</h2>${f.h}
-      <div class="sec-foot"><button class="btn sm ${p.read.includes(i)?'':'primary'}" data-read="${i}">${p.read.includes(i)?ic('check','sm')+'Lu':'Marquer comme lu · +15 XP'}</button></div></article>`).join('')}
-    <div class="card pad row spread no-print" style="margin-top:16px"><span>Fiche lue ? Passez à la pratique.</span><span class="row"><a class="btn" href="${U.sub(s.id,'cartes')}">${ic('layers','sm')}Cartes</a><a class="btn primary" href="${U.sub(s.id,'qcm')}">${ic('circleCheck','sm')}Faire le QCM</a></span></div></div>
+    <nav class="card toc no-print" aria-label="Sommaire"><div class="small muted" style="padding:4px 8px 8px;font-weight:500">${p.read.length}/${s.fiche.length} sections lues</div>
+      ${s.fiche.map((f,i)=>`<a href="#s${i+1}" class="${p.read.includes(i)?'read':''}"><span class="tick">${p.read.includes(i)?ic('check','sm'):''}</span>${esc(f.t)}${p.read.includes(i)?'<span class="sr"> (lue)</span>':''}</a>`).join('')}</nav>
+    <div>${s.fiche.map((f,i)=>`<article class="card pad sec" id="s${i+1}"><h2><span class="num" aria-hidden="true">${pad2(i+1)}</span>${esc(f.t)}</h2>${f.h}
+      <div class="sec-foot"><button class="btn sm" data-read="${i}" aria-pressed="${p.read.includes(i)}">${p.read.includes(i)?ic('check','sm')+'Lue':'Marquer comme lue'}</button></div></article>`).join('')}
+    <div class="card pad row spread no-print" style="margin-top:16px"><span>Cours terminé ? Passez à la pratique.</span><span class="row"><a class="btn" href="${U.sub(s.id,'cartes')}">${ic('layers','sm')}Cartes</a><a class="btn primary" href="${U.sub(s.id,'qcm')}">${ic('circleCheck','sm')}Faire le QCM</a></span></div></div>
   </div>`;
 }
 
 /* ================= QCM (et moteur des défis) ================= */
 let QZ=null;
-function startQuiz(list,o){QZ={page:PAGE,list:list.map(q=>({...q,order:shuffle(q.o.map((_,i)=>i))})),i:0,answers:[],picked:new Set(),done:false,ctx:o.ctx,title:o.title||'QCM',timer:o.timer||0,t0:Date.now(),retry:!!o.retry,duel:o.duel||null,xp0:xpTotal()}}
+function startQuiz(list,o){QZ={page:PAGE,list:list.map(q=>({...q,order:shuffle(q.o.map((_,i)=>i))})),i:0,answers:[],picked:new Set(),done:false,ctx:o.ctx,title:o.title||'QCM',timer:o.timer||0,t0:Date.now(),retry:!!o.retry,duel:o.duel||null,xp0:xpTotal(),parts:[],warned:false}}
+/* Défis et partiels blancs : pas de correction ni d'XP avant la fin, sinon la barre d'XP trahirait la réponse. */
 const blind=z=>z.ctx==='partiel'||z.ctx==='duel';
 function quizView(s){
   const ctx='subject:'+s.id;if(QZ&&QZ.ctx===ctx)return quizBody();
   const st=stats(s),wrong=sp(s.id).wrong.map(id=>QINDEX.get(id)).filter(Boolean);
   AFTER.push(()=>{$$('[data-n]').forEach(b=>b.onclick=()=>{startQuiz(shuffle(s.quiz).slice(0,+b.dataset.n),{ctx,title:'QCM · '+s.name});render()});
-    const w=$('#qWrongS');if(w)w.onclick=()=>{startQuiz(shuffle(wrong),{ctx,title:'Mes erreurs · '+s.name,retry:true});render()}});
+    const w=$('#qWrongS');if(w)w.onclick=()=>{startQuiz(shuffle(wrong),{ctx,title:'Mes erreurs · '+plural(wrong.length,'question'),retry:true});render()}});
   return `<section class="card pad grid">
-    <div class="head"><div><h2>QCM · ${esc(s.name)}</h2><p class="muted" style="margin-top:5px">${s.quiz.length} questions, ordre aléatoire. Certaines ont <b>plusieurs bonnes réponses</b>, comme au partiel. +10 XP par bonne réponse.</p></div>
+    <div class="head"><div><h2>Combien de questions ?</h2><p class="muted" style="margin-top:5px">${s.quiz.length} questions dans cette matière, posées dans un ordre aléatoire. Certaines ont <b>plusieurs bonnes réponses</b>, comme au partiel.</p></div>
       ${st.runs?`<span class="badge ${st.best>=80?'ok':'gold'}">Meilleur score ${st.best} %</span>`:''}</div>
     <div class="row">${[10,20].filter(n=>n<s.quiz.length).map(n=>`<button class="btn" data-n="${n}">${n} questions</button>`).join('')}<button class="btn primary" data-n="${s.quiz.length}">Toutes (${s.quiz.length})</button>
-      ${wrong.length?`<button class="btn xp" id="qWrongS">${ic('rotate','sm')}Mes erreurs (${wrong.length})</button>`:''}</div>
+      ${wrong.length?`<button class="btn xp" id="qWrongS">${ic('rotate','sm')}Refaire mes erreurs (${wrong.length})</button>`:''}</div>
   </section>`;
 }
 function quizBody(){
   const z=QZ;if(z.done)return quizResult();
   const q=z.list[z.i],multi=q.a.length>1,ans=z.answers[z.i];
   AFTER.push(bindQuiz);
-  return `<section class="card pad q">
-    <div class="row spread"><span class="row"><span class="badge blue">Question ${z.i+1} / ${z.list.length}</span>${q.src?`<span class="badge gold">${esc(q.src)}</span>`:''}${z.ctx!=='subject:'+q.sid?`<span class="badge">${esc(subj(q.sid).name)}</span>`:''}${z.timer?'<span class="badge timer" id="qTimer"></span>':''}</span>
-      <button class="btn ghost sm" id="qQuit">${ic('x','sm')}Quitter</button></div>
-    <div class="progress"><i style="width:${100*z.i/z.list.length}%"></i></div>
-    <div class="q-text">${esc(q.q)}</div>
+  const showTitle=z.ctx.startsWith('subject:');
+  return `<section class="card pad q" aria-labelledby="qText">
+    <div class="row spread qhead"><span class="row">${showTitle?`<b class="small" style="font-weight:600">${esc(z.title)}</b>`:''}<span class="badge blue">Question ${z.i+1} / ${z.list.length}</span>${q.src?`<span class="badge gold">${esc(q.src)}</span>`:''}${z.ctx!=='subject:'+q.sid?`<span class="badge">${esc(subj(q.sid).name)}</span>`:''}${z.timer?'<span class="badge timer" id="qTimer" role="timer" aria-live="off"></span>':''}</span>
+      <button class="btn ghost sm" id="qQuit">${ic('x','sm')}${z.ctx==='duel'?'Abandonner':'Quitter'}</button></div>
+    <div class="progress" role="progressbar" aria-label="Avancement" aria-valuenow="${z.i}" aria-valuemin="0" aria-valuemax="${z.list.length}"><i style="width:${100*z.i/z.list.length}%"></i></div>
+    <div class="q-text" id="qText">${esc(q.q)}</div>
     ${q.code?`<pre><code>${esc(q.code)}</code></pre>`:''}
-    ${multi?`<div class="hint">Plusieurs réponses possibles : cochez toutes les bonnes puis validez.</div>`:''}
-    <div class="opts">${q.order.map((oi,k)=>{const cls=ans?(q.a.includes(oi)?'good':(ans.picked.includes(oi)?'wrong':'')):(z.picked.has(oi)?'sel':'');
-      return `<button class="opt ${cls}" data-o="${oi}" ${ans?'disabled':''}><span class="l">${'ABCDEF'[k]}</span><span>${esc(q.o[oi])}</span>${ans&&q.a.includes(oi)?ic('check','mark')+'<span class="sr">(bonne réponse)</span>':ans&&ans.picked.includes(oi)?ic('x','mark')+'<span class="sr">(votre réponse, fausse)</span>':''}</button>`}).join('')}</div>
-    ${ans?`<div class="expl ${ans.ok?'ok':'bad'}"><b>${ans.ok?'Bonne réponse · +10 XP.':'Pas tout à fait.'}</b> ${esc(q.e||'')}</div>
+    ${multi?`<div class="hint" id="qHint">Plusieurs réponses possibles : cochez toutes les bonnes puis validez.</div>`:''}
+    <div class="opts" role="${multi?'group':'radiogroup'}" aria-labelledby="qText"${multi?' aria-describedby="qHint"':''}>${q.order.map((oi,k)=>{const on=ans?ans.picked.includes(oi):z.picked.has(oi);const cls=ans?(q.a.includes(oi)?'good':(ans.picked.includes(oi)?'wrong':'')):(on?'sel':'');
+      return `<button class="opt ${cls}" data-o="${oi}" role="${multi?'checkbox':'radio'}" aria-checked="${on}" ${ans?'aria-disabled="true" disabled':''}><span class="l" aria-hidden="true">${'ABCDEF'[k]}</span><span>${esc(q.o[oi])}</span>${ans&&q.a.includes(oi)?ic('check','mark')+'<span class="sr">(bonne réponse)</span>':ans&&ans.picked.includes(oi)?ic('x','mark')+'<span class="sr">(votre réponse, fausse)</span>':''}</button>`}).join('')}</div>
+    ${ans?`<div class="expl ${ans.ok?'ok':'bad'}" role="status"><b>${ans.ok?'Bonne réponse.':'Pas tout à fait.'}</b> ${esc(q.e||'')}</div>
       <div class="row" style="justify-content:flex-end"><span class="muted small">Entrée ↵</span><button class="btn primary" id="qNext">${z.i+1<z.list.length?'Question suivante':'Voir le résultat'}${ic('arrow','sm')}</button></div>`
       :(multi?`<div class="row" style="justify-content:flex-end"><button class="btn primary" id="qValid" ${z.picked.size?'':'disabled'}>Valider</button></div>`:'')}
   </section>`;
 }
 function bindQuiz(){
   const z=QZ;if(!z||z.done)return;const q=z.list[z.i];
-  $('#qQuit').onclick=()=>{if(z.answers.length&&!confirm(z.ctx==='duel'?'Abandonner ce défi ? Il ne sera pas envoyé.':'Quitter ce QCM ? Les réponses données sont perdues.'))return;QZ=null;clearInterval(TT);render()};
+  $('#qQuit').onclick=()=>{
+    if(z.ctx==='duel'&&z.duel.mode==='answer'){if(!confirm('Abandonner ce défi ? Il comptera comme perdu.'))return;forfeitDuel(z.duel.c);QZ=null;clearInterval(TT);render();return}
+    if(z.answers.length&&!confirm(z.ctx==='duel'?'Abandonner ce défi ? Il ne sera pas envoyé.':'Quitter ? Les réponses données ne seront pas comptées.'))return;QZ=null;clearInterval(TT);render()};
   $$('.opt').forEach(b=>b.onclick=()=>choose(+b.dataset.o));
   const v=$('#qValid');if(v)v.onclick=answer;
   const n=$('#qNext');if(n)n.onclick=nextQ;
@@ -570,49 +588,64 @@ function bindQuiz(){
   if(z.timer)tickTimer();
 }
 function choose(oi){const z=QZ,q=z.list[z.i];if(z.answers[z.i])return;if(q.a.length>1){z.picked.has(oi)?z.picked.delete(oi):z.picked.add(oi);render()}else{z.picked=new Set([oi]);answer()}}
-function answer(){const z=QZ,q=z.list[z.i],picked=[...z.picked];const ok=picked.length===q.a.length&&picked.every(p=>q.a.includes(p));z.answers[z.i]={picked,ok};bump();if(ok)addXp(10,'',true);
+function answer(){const z=QZ,q=z.list[z.i],picked=[...z.picked];const ok=picked.length===q.a.length&&picked.every(p=>q.a.includes(p));z.answers[z.i]={picked,ok};bump();
+  if(ok&&!blind(z))addXp(10,'',true);
   if(blind(z)){nextQ();return}render()}
-function nextQ(){const z=QZ;z.i++;z.picked=new Set();if(z.i>=z.list.length)finishQuiz();render();window.scrollTo(0,0)}
+/* Après chaque question, on remonte au début de la carte QCM (et non en haut de la page). */
+function nextQ(){const z=QZ;z.i++;z.picked=new Set();if(z.i>=z.list.length)finishQuiz();render();const c=$('.q')||$('.result');if(c){const top=c.getBoundingClientRect().top;if(top<0||top>innerHeight*.35)c.scrollIntoView({block:'start'})}}
 let TT=null;
 function tickTimer(){clearInterval(TT);if(!QZ||!QZ.timer)return;const upd=()=>{if(!QZ||QZ.done){clearInterval(TT);return}
-  const left=Math.max(0,QZ.timer*60-Math.floor((Date.now()-QZ.t0)/1000));const e=$('#qTimer');if(e)e.innerHTML=`${ic('clock','sm')} ${Math.floor(left/60)}:${pad2(left%60)}`;
-  if(left<=0){clearInterval(TT);finishQuiz();render();toast('Temps écoulé !')}};upd();TT=setInterval(upd,1000)}
+  const left=Math.max(0,QZ.timer*60-Math.floor((Date.now()-QZ.t0)/1000));const e=$('#qTimer');if(e)e.innerHTML=`${ic('clock','sm')} ${Math.floor(left/60)}:${pad2(left%60)}<span class="sr"> restantes</span>`;
+  if(left<=300&&!QZ.warned&&QZ.timer>5){QZ.warned=true;toast('Plus que 5 minutes.')}
+  if(left<=0){clearInterval(TT);finishQuiz();render();toast('Temps écoulé : le partiel est terminé.')}};upd();TT=setInterval(upd,1000)}
 function finishQuiz(){const z=QZ;if(z.done)return;z.done=true;clearInterval(TT);
   const good=z.answers.filter(a=>a&&a.ok).length,pct=Math.round(100*good/z.list.length);z.score={good,pct};z.time=Math.max(1,Math.round((Date.now()-z.t0)/1000));
   z.list.forEach((q,i)=>{const p=sp(q.sid),w=new Set(p.wrong);(z.answers[i]&&z.answers[i].ok)?w.delete(q.id):w.add(q.id);p.wrong=[...w]});
   if(z.ctx.startsWith('subject:')&&!z.retry){const p=sp(z.ctx.slice(8));p.quizRuns=(p.quizRuns||0)+1;if(z.list.length>=5)p.quizBest=Math.max(p.quizBest||0,pct)}
-  if(z.list.length>=5)addXp(20,'QCM terminé',true);
-  if(pct===100&&z.list.length>=10){prog()._perfect=true;addXp(50,'Sans faute !')}
-  if(z.ctx==='partiel'){const h=glob('_partiels',[]);h.unshift({at:Date.now(),pct,n:z.list.length});h.splice(12);addXp(30,'Partiel blanc terminé',true)}
+  const part=(n,l)=>{if(n>0)z.parts.push([n,l])};
+  part(10*good,plural(good,'bonne réponse','bonnes réponses'));
+  if(blind(z))addXp(10*good,'',true);
+  if(z.list.length>=5){addXp(20,'',true);part(20,'série terminée')}
+  if(pct===100&&z.list.length>=10){prog()._perfect=true;addXp(50,'',true);part(50,'sans faute')}
+  if(z.ctx==='partiel'){const h=glob('_partiels',[]);h.unshift({at:Date.now(),pct,n:z.list.length});h.splice(12);addXp(30,'',true);part(30,'partiel blanc')}
   if(z.ctx==='duel')finishDuel(z);
   saveSoon()}
-function finishDuel(z){const d=z.duel,uid=S.user.id,me=myProfile();addXp(30,'',true);
+function finishDuel(z){const d=z.duel,uid=S.user.id,me=myProfile();addXp(30,'',true);z.parts.push([30,'défi joué']);
   if(d.mode==='new'){z.duelRes={state:'sending',opp:d.toName};
     S.api.createChallenge({from:uid,fromName:me.pseudo,to:d.to,toName:d.toName,sid:d.sid,qids:z.list.map(q=>q.id),fromScore:z.score.good,fromTime:z.time})
       .then(()=>{z.duelRes.state='sent';toast('Défi envoyé à '+d.toName);loadSocial(true);if(QZ===z)render()})
       .catch(e=>{z.duelRes.state='error';z.duelRes.err=fr(e).message;if(QZ===z)render()})}
   else{const c=d.c,fake={...c,toScore:z.score.good,toTime:z.time},r=duelOutcome(fake,false);z.duelRes={state:r,opp:c.fromName,oppScore:c.fromScore,oppTime:c.fromTime};
-    glob('_duelsSeen',[]).push(c.id);if(r==='win'){prog()._duelWins=(prog()._duelWins||0)+1;addXp(70,'Défi gagné')}
+    /* Résultat gardé localement : s'il n'a pas pu être envoyé, il sera renvoyé au prochain chargement (et non compté comme abandon). */
+    const R=glob('_duelRes',{});R[c.id]={toScore:z.score.good,toTime:z.time};const rk=Object.keys(R);if(rk.length>50)rk.slice(0,rk.length-50).forEach(k=>delete R[k]);
+    if(r==='win'){prog()._duelWins=(prog()._duelWins||0)+1;addXp(70,'',true);z.parts.push([70,'victoire'])}
     S.api.answerChallenge(c.id,{toScore:z.score.good,toTime:z.time}).then(()=>loadSocial(true)).catch(e=>toast('Résultat non enregistré : '+fr(e).message))}}
+/* Un défi reçu commencé puis abandonné (ou quitté en fermant la page) compte comme perdu : score 0. */
+function forfeitDuel(c,msg){S.forfeit=S.forfeit||{};S.forfeit[c.id]=1;const st=glob('_duelStarted',[]);if(!st.includes(c.id))st.push(c.id);saveSoon();
+  return S.api.answerChallenge(c.id,{toScore:0,toTime:9999}).then(()=>{toast(msg||'Défi abandonné : il compte comme perdu.');loadSocial(true)}).catch(e=>{delete S.forfeit[c.id];toast('Abandon non enregistré : '+fr(e).message)})}
 function quizResult(){
   const z=QZ,{good,pct}=z.score,mention=pct>=90?'Excellent':pct>=75?'Très bien':pct>=50?'Encore un effort':'À retravailler';
-  const wrongQs=z.list.filter((q,i)=>!(z.answers[i]&&z.answers[i].ok)),gain=xpTotal()-z.xp0;
+  const wrongQs=z.list.filter((q,i)=>!(z.answers[i]&&z.answers[i].ok));
   const by={};z.list.forEach((q,i)=>{by[q.sid]=by[q.sid]||[0,0];by[q.sid][1]++;if(z.answers[i]&&z.answers[i].ok)by[q.sid][0]++});
   AFTER.push(()=>{$('#qAgain').onclick=()=>{QZ=null;render()};
-    const w=$('#qWrong');if(w)w.onclick=()=>{startQuiz(shuffle(wrongQs),{ctx:z.ctx.startsWith('subject:')?z.ctx:'errors',title:'Mes erreurs',retry:true});render();scrollTo(0,0)}});
-  const dr=z.duelRes;let duelBox='';
-  if(dr){const m={sending:['Envoi du défi…',''],sent:[`Défi envoyé à ${esc(dr.opp)} : il verra votre résultat après avoir joué.`,'blue'],error:['Défi non envoyé : '+esc(dr.err||''),'bad'],
-      win:[`Victoire contre ${esc(dr.opp)} (${dr.oppScore}/${z.list.length}) · +70 XP`,'ok'],lose:[`${esc(dr.opp)} gagne (${dr.oppScore}/${z.list.length}, ${dr.oppTime} s)`,'bad'],draw:[`Égalité parfaite avec ${esc(dr.opp)}`,'gold']}[dr.state];
-    duelBox=`<span class="badge ${m[1]}" style="height:auto;padding:7px 14px;white-space:normal">${ic('swords','sm')} ${m[0]}</span>`}
+    const w=$('#qWrong');if(w)w.onclick=()=>{startQuiz(shuffle(wrongQs),{ctx:z.ctx.startsWith('subject:')?z.ctx:'errors',title:'Mes erreurs · '+plural(wrongQs.length,'question'),retry:true});render();const c=$('.q');if(c)c.scrollIntoView({block:'start'})}});
+  const dr=z.duelRes,n=z.list.length;
+  let headline;
+  if(dr&&['win','lose','draw'].includes(dr.state)){
+    const lab={win:'Victoire',lose:'Défaite',draw:'Égalité'}[dr.state],col={win:'var(--ok)',lose:'var(--bad)',draw:'var(--xp-ink)'}[dr.state];
+    headline=`<div class="score" style="color:${col}">${good} – ${dr.oppScore}</div><h2>${lab} contre ${esc(dr.opp)}</h2><p class="muted">${good}/${n} pour vous en ${z.time} s · ${dr.oppScore}/${n} pour ${esc(dr.opp)} en ${dr.oppTime} s</p>`}
+  else{
+    headline=`<div class="score" style="color:${pct>=75?'var(--ok)':pct>=50?'var(--xp-ink)':'var(--bad)'}">${pct} %</div><h2>${mention}</h2><p class="muted">${good} bonne${good>1?'s':''} réponse${good>1?'s':''} sur ${n} · ${z.time} s</p>`;
+    if(dr){const m={sending:['Envoi du défi…',''],sent:[`Défi envoyé. ${esc(dr.opp)} verra votre score après avoir joué.`,'blue'],error:['Défi non envoyé : '+esc(dr.err||''),'bad']}[dr.state];
+      headline+=`<span class="badge ${m[1]}" style="height:auto;padding:7px 12px;white-space:normal">${ic('swords','sm')} ${m[0]}</span>`}}
+  const parts=z.parts.length?`<p class="xp-gain">${ic('star','sm')} XP gagnés : ${z.parts.map(([v,l])=>`${esc(l)} <b>+${v}</b>`).join(' · ')}</p>`:'';
   return `<section class="card pad result">
-    <p class="eyebrow">${esc(z.title)}</p><div class="score" style="color:${pct>=75?'var(--ok)':pct>=50?'var(--xp-ink)':'var(--bad)'}">${pct} %</div><h2>${mention}</h2>
-    <p class="muted">${good} bonne${good>1?'s':''} réponse${good>1?'s':''} sur ${z.list.length} · ${z.time} s</p>
-    ${gain>0?`<span class="xp-gain">${ic('star','sm')} +${gain} XP</span>`:''}${duelBox}
-    <div class="row" style="justify-content:center">${wrongQs.length?`<button class="btn xp" id="qWrong">${ic('rotate','sm')}Refaire mes ${wrongQs.length} erreurs</button>`:''}<button class="btn primary" id="qAgain">${z.ctx==='duel'?'Retour aux défis':'Nouveau QCM'}</button></div>
+    ${z.ctx.startsWith('subject:')?`<p class="eyebrow">${esc(z.title)}</p>`:''}${headline}${parts}
+    <div class="row" style="justify-content:center">${wrongQs.length?`<button class="btn xp" id="qWrong">${ic('rotate','sm')}Refaire mes ${wrongQs.length} erreur${wrongQs.length>1?'s':''}</button>`:''}<button class="btn primary" id="qAgain">${z.ctx==='duel'?'Retour aux défis':z.ctx==='partiel'?'Nouveau partiel blanc':'Nouveau QCM'}</button></div>
     ${Object.keys(by).length>1?`<div class="tbl" style="width:100%;text-align:left"><table><tr><th>Matière</th><th>Score</th></tr>${Object.entries(by).map(([sid,[g,t]])=>`<tr><td>${esc(subj(sid).name)}</td><td><b>${g}/${t}</b> <span class="muted">(${Math.round(100*g/t)} %)</span></td></tr>`).join('')}</table></div>`:''}
     <div class="review"><h3 style="margin-top:8px">Correction détaillée</h3>${z.list.map((q,i)=>{const a=z.answers[i];return `<div class="it">
       <div class="row" style="flex-wrap:nowrap;align-items:flex-start"><span class="badge ${a&&a.ok?'ok':'bad'}">${a&&a.ok?'Juste':'Faux'}</span><b>${esc(q.q)}</b></div>
-      <p class="small" style="margin-top:6px">Réponse : <b>${q.a.map(x=>esc(q.o[x])).join(' · ')}</b>${a&&!a.ok&&a.picked.length?` <span class="muted">(vous : ${a.picked.map(x=>esc(q.o[x])).join(' · ')})</span>`:''}</p>
+      <p class="small" style="margin-top:6px">Réponse : <b>${q.a.map(x=>esc(q.o[x])).join(' · ')}</b>${a&&!a.ok&&a.picked.length?` <span class="muted">(vous : ${a.picked.map(x=>esc(q.o[x])).join(' · ')})</span>`:''}${!a?' <span class="muted">(sans réponse)</span>':''}</p>
       ${q.e?`<p class="small muted" style="margin-top:4px">${esc(q.e)}</p>`:''}</div>`}).join('')}</div>
   </section>`;
 }
@@ -625,7 +658,8 @@ function buildDeck(sids,cram){let due=[],fresh=[];
   return shuffle(due).concat(shuffle(fresh).slice(0,cram?0:(sids.length>1?10:15)))}
 function rate(ok){const it=FC.items[FC.i];const p=sp(it.sid),c=p.srs[it.i]||{b:0};
   if(ok){c.b=Math.min(5,c.b+1);c.due=addDays(dayKey(),INT[c.b])}else{c.b=1;c.due=dayKey();FC.items.push(it);FC.again++}
-  p.srs[it.i]=c;FC.i++;FC.flip=false;FC.done++;prog()._cardReviews=(prog()._cardReviews||0)+1;bump();addXp(ok?3:1,'',true);render()}
+  p.srs[it.i]=c;FC.i++;FC.flip=false;FC.done++;prog()._cardReviews=(prog()._cardReviews||0)+1;bump();addXp(ok?3:1,'',true);render();$('#flash')&&$('#flash').focus({preventScroll:true})}
+const NEXT_LABEL=b=>({1:'revient demain',2:'revient dans 2 jours',3:'revient dans 4 jours',4:'revient dans 8 jours',5:'maîtrisée'}[b]||'nouvelle');
 function cardsBody(back){
   const it=FC.items[FC.i];
   if(!it)return `<section class="card pad result"><div class="score" style="color:var(--ok)">${ic('circleCheck','xl')}</div><h2>Session terminée</h2>
@@ -633,13 +667,13 @@ function cardsBody(back){
     <div class="row" style="justify-content:center"><button class="btn" id="cCram">Tout revoir quand même</button><a class="btn primary" href="${back}">Terminer</a></div></section>`;
   const s=subj(it.sid),c=s.cards[it.i],st=cardState(it.sid,it.i);
   return `<section class="card pad grid">
-    <div class="row spread"><span class="row"><span class="badge blue">${FC.i+1} / ${FC.items.length}</span>${st?`<span class="badge">Boîte ${st.b}</span>`:'<span class="badge gold">Nouvelle</span>'}${FC.multi?`<span class="badge">${esc(s.name)}</span>`:''}</span>
+    <div class="row spread"><span class="row"><span class="badge blue">${FC.i+1} / ${FC.items.length}</span>${st?`<span class="badge">Déjà vue · ${NEXT_LABEL(st.b)}</span>`:'<span class="badge gold">Nouvelle</span>'}${FC.multi?`<span class="badge">${esc(s.name)}</span>`:''}</span>
       <button class="btn ghost sm" id="cQuit">${ic('x','sm')}Quitter</button></div>
-    <div class="card-wrap"><div class="flash ${FC.flip?'flip':''}" id="flash" tabindex="0" role="button" aria-label="Retourner la carte">
-      <div class="face"><small>Question</small><div>${c[0]}</div></div>
-      <div class="face back"><small>Réponse</small><div>${c[1]}</div></div></div></div>
-    <p class="muted small" style="text-align:center">${FC.flip?'Vous saviez ? <kbd>1</kbd> à revoir · <kbd>2</kbd> je savais':'Cliquez ou <kbd>Espace</kbd> pour retourner la carte'}</p>
-    <div class="row" style="justify-content:center"><button class="btn lg" id="cNo" ${FC.flip?'':'disabled'}>${ic('rotate','sm')}À revoir</button><button class="btn primary lg" id="cYes" ${FC.flip?'':'disabled'}>${ic('check','sm')}Je savais · +3 XP</button></div>
+    <div class="card-wrap"><div class="flash ${FC.flip?'flip':''}" id="flash" tabindex="0" role="button" aria-pressed="${FC.flip}" aria-label="${FC.flip?'Carte retournée : réponse affichée':'Retourner la carte'}">
+      <div class="face" aria-hidden="${FC.flip}"><small>Question</small><div>${c[0]}</div></div>
+      <div class="face back" aria-hidden="${!FC.flip}"><small>Réponse</small><div><p class="muted small" style="margin:0 0 12px">${c[0]}</p>${c[1]}</div></div></div></div>
+    <p class="muted small" style="text-align:center" aria-live="polite">${FC.flip?'Vous saviez ? <kbd>1</kbd> à revoir · <kbd>2</kbd> je savais':'Cliquez ou <kbd>Espace</kbd> pour retourner la carte'}</p>
+    <div class="row" style="justify-content:center"><button class="btn lg" id="cNo" ${FC.flip?'':'disabled'}>${ic('rotate','sm')}À revoir</button><button class="btn primary lg" id="cYes" ${FC.flip?'':'disabled'}>${ic('check','sm')}Je savais</button></div>
   </section>`;
 }
 function bindCards(){
@@ -651,30 +685,30 @@ function bindCards(){
     else if(FC.flip&&(e.key==='1'||e.key==='ArrowLeft'))rate(false);else if(FC.flip&&(e.key==='2'||e.key==='ArrowRight'))rate(true)};
 }
 function boxesHtml(sids){const b=[0,0,0,0,0,0];let fresh=0;sids.forEach(sid=>subj(sid).cards.forEach((_,i)=>{const c=cardState(sid,i);c?b[c.b]++:fresh++}));
-  return `<div class="boxes"><div><b>${fresh}</b>nouvelles</div><div><b>${b[1]+b[0]}</b>boîte 1</div><div><b>${b[2]}</b>boîte 2</div><div><b>${b[3]+b[4]}</b>boîtes 3-4</div><div><b>${b[5]}</b>maîtrisées</div></div>`}
+  return `<div class="boxes"><div><b>${fresh}</b>jamais vues</div><div><b>${b[1]+b[0]}</b>à revoir demain</div><div><b>${b[2]}</b>dans 2 jours</div><div><b>${b[3]+b[4]}</b>dans 4 à 8 jours</div><div><b>${b[5]}</b>maîtrisées</div></div>`}
 function cardsView(s){
   if(FC&&FC.key===s.id){AFTER.push(bindCards);return cardsBody(U.sub(s.id,'cartes'))}
   const due=dueList(s.id).length,nw=newList(s.id).length;
-  AFTER.push(()=>{$('#cStart').onclick=()=>{FC={key:s.id,sids:[s.id],items:buildDeck([s.id],false),i:0,flip:false,done:0,again:0};if(!FC.items.length)FC.items=buildDeck([s.id],true);render()}});
+  AFTER.push(()=>{$('#cStart').onclick=()=>{FC={key:s.id,sids:[s.id],items:buildDeck([s.id],false),i:0,flip:false,done:0,again:0};if(!FC.items.length)FC.items=buildDeck([s.id],true);render();$('#flash')&&$('#flash').focus({preventScroll:true})}});
   return `<section class="card pad grid">
-    <div><h2>Cartes · ${esc(s.name)}</h2><p class="muted" style="margin-top:5px">Répétition espacée : une carte sue revient de plus en plus tard (1, 2, 4, 8, 16 jours) ; une carte ratée revient tout de suite.</p></div>
+    <div><h2>Cartes de révision</h2><p class="muted" style="margin-top:5px">Une carte que vous savez revient de plus en plus tard (1, 2, 4, 8 puis 16 jours) ; une carte ratée revient tout de suite.</p></div>
     ${boxesHtml([s.id])}
-    <div class="row"><button class="btn primary lg" id="cStart">${ic('layers','sm')}${due||nw?`Commencer (${due} à revoir · ${Math.min(nw,15)} nouvelles)`:'Tout revoir'}</button><a class="btn lg" href="lexique.html?m=${s.id}">${ic('list','sm')}Voir la liste</a></div>
+    <div class="row"><button class="btn primary lg" id="cStart">${ic('layers','sm')}${due||nw?`Commencer : ${due} à revoir, ${Math.min(nw,15)} nouvelles`:'Tout revoir'}</button><a class="btn lg" href="lexique.html?m=${s.id}">${ic('list','sm')}Voir toutes les cartes</a></div>
   </section>`;
 }
 
 /* ================= Exercices ================= */
 function exosView(s){
   const p=sp(s.id);
-  AFTER.push(()=>{$$('[data-exo]').forEach(b=>b.onclick=()=>{const i=+b.dataset.exo,set=new Set(p.exos);if(set.has(i))set.delete(i);else{set.add(i);bump();giveOnce(s.id,'e'+i,40,'Exercice maîtrisé')}p.exos=[...set];saveSoon();const y=scrollY;render();scrollTo(0,y)});
+  AFTER.push(()=>{$$('[data-exo]').forEach(b=>b.onclick=()=>{const i=+b.dataset.exo,set=new Set(p.exos);if(set.has(i))set.delete(i);else{set.add(i);bump();giveOnce(s.id,'e'+i,40,'Exercice réussi')}p.exos=[...set];saveSoon();const y=scrollY;render();scrollTo(0,y)});
     $$('textarea[data-draft]').forEach(t=>{const k='gr-draft-'+S.user.id+'-'+t.dataset.draft;t.value=store.get(k,'');t.oninput=()=>store.set(k,t.value)})});
-  return `<section class="card pad-sm tip" style="margin:0">${ic('pencil','sm')} Rédigez votre réponse (elle reste dans ce navigateur), <b>puis</b> ouvrez le corrigé. Un exercice maîtrisé rapporte 40 XP.</section>
+  return `<section class="card pad-sm tip" style="margin:0">${ic('pencil','sm')} Rédigez votre réponse (elle reste dans ce navigateur), <b>puis</b> ouvrez le corrigé pour comparer.</section>
   ${s.exos.map((x,i)=>`<section class="card pad exo">
-    <div class="row spread"><h3><span class="num" aria-hidden="true">${pad2(i+1)}</span>${esc(x.t)}</h3><span class="row">${x.src?`<span class="badge gold">${esc(x.src)}</span>`:''}${x.pts?`<span class="badge">${esc(x.pts)}</span>`:''}${p.exos.includes(i)?'<span class="badge ok">Maîtrisé</span>':''}</span></div>
+    <div class="row spread"><h3><span class="num" aria-hidden="true">${pad2(i+1)}</span>${esc(x.t)}</h3><span class="row">${x.src?`<span class="badge gold">${esc(x.src)}</span>`:''}${x.pts?`<span class="badge">${esc(x.pts)}</span>`:''}${p.exos.includes(i)?'<span class="badge ok">Réussi</span>':''}</span></div>
     <div>${x.q}</div>
-    <textarea data-draft="${s.id}-${i}" placeholder="Votre réponse…" aria-label="Votre réponse"></textarea>
-    <details><summary>Voir le corrigé</summary><div class="sec">${x.r}</div></details>
-    <div class="row" style="justify-content:flex-end"><button class="btn sm ${p.exos.includes(i)?'':'primary'}" data-exo="${i}">${p.exos.includes(i)?'Annuler « maîtrisé »':'Je maîtrise cet exercice'}</button></div>
+    <label class="sr" for="draft-${i}">Votre réponse à l'exercice ${i+1}</label><textarea id="draft-${i}" data-draft="${s.id}-${i}" placeholder="Votre réponse…"></textarea>
+    <details><summary>Voir le corrigé</summary><div class="sec">${x.r}</div>
+      <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn sm" data-exo="${i}" aria-pressed="${p.exos.includes(i)}">${p.exos.includes(i)?ic('check','sm')+'Réussi (annuler)':'J\'avais trouvé sans le corrigé'}</button></div></details>
   </section>`).join('')}`;
 }
 
@@ -685,58 +719,64 @@ function pageRevisions(){
   const due=totalDue(),wrong=totalWrong(),nw=SUBJECTS.reduce((n,s)=>n+newList(s.id).length,0);
   const wrongQs=SUBJECTS.flatMap(s=>sp(s.id).wrong.map(id=>QINDEX.get(id)).filter(Boolean));
   AFTER.push(()=>{$('#rCards').onclick=()=>{const ids=SUBJECTS.map(s=>s.id);FC={key:'_all',multi:true,sids:ids,items:buildDeck(ids,false),i:0,flip:false,done:0,again:0};render()};
-    const w=$('#rWrong');if(w)w.onclick=()=>{startQuiz(shuffle(wrongQs).slice(0,30),{ctx:'errors',title:'Mes erreurs',retry:true});render()};
+    const w=$('#rWrong');if(w)w.onclick=()=>{const l=shuffle(wrongQs).slice(0,30);startQuiz(l,{ctx:'errors',title:'Mes erreurs · '+plural(l.length,'question'),retry:true});render()};
     $('#rExpress').onclick=()=>{startQuiz(shuffle(SUBJECTS.flatMap(s=>s.quiz)).slice(0,10),{ctx:'errors',title:'QCM express'});render()}});
   return crumbs([['Accueil','index.html'],['Révisions du jour','']])+`<section class="head"><div><h1>Révisions du jour</h1><p class="lede">Un quart d'heure par jour vaut mieux qu'une nuit blanche la veille : les cartes et les erreurs reviennent quand il faut.</p></div></section>
   <section class="bento">
-    <div class="card tile b2"><div class="t-h">${tic('layers','#2563eb')}Cartes à revoir</div><div class="big">${due}</div>
-      <p class="small muted">${due?'Cartes dont la date de révision est arrivée, toutes matières.':'Rien d\'échu aujourd\'hui. '+(nw?nw+' nouvelles cartes à découvrir.':'')}</p>
+    <div class="card tile b2"><div class="t-h">${tic('layers')}Cartes à revoir</div><div class="big">${due}</div>
+      <p class="small muted">${due?'Cartes à revoir aujourd\'hui, toutes matières.':'Aucune carte à revoir aujourd\'hui. '+(nw?nw+' cartes jamais vues à découvrir.':'')}</p>
       <div class="row" style="margin-top:auto"><button class="btn primary" id="rCards">${due?'Réviser maintenant':'Découvrir 10 nouvelles cartes'}</button></div></div>
-    <div class="card tile"><div class="t-h">${tic('rotate','#dc2626')}Mes erreurs</div><div class="big">${wrong}</div>
-      <p class="small muted">Questions ratées. Une bonne réponse les retire de la liste.</p><button class="btn xp" id="rWrong" style="margin-top:auto" ${wrong?'':'disabled'}>Refaire mes erreurs</button></div>
-    <div class="card tile"><div class="t-h">${tic('zap','#7c3aed')}QCM express</div><div class="big">10</div>
+    <div class="card tile"><div class="t-h">${tic('rotate')}Mes erreurs</div><div class="big">${wrong}</div>
+      <p class="small muted">Questions ratées dans les QCM, défis et partiels blancs. Une bonne réponse les retire de la liste.</p><button class="btn" id="rWrong" style="margin-top:auto" ${wrong?'':'disabled'}>Refaire mes erreurs</button></div>
+    <div class="card tile"><div class="t-h">${tic('zap')}QCM express</div><div class="big">10</div>
       <p class="small muted">Dix questions au hasard, toutes matières, correction immédiate.</p><button class="btn" id="rExpress" style="margin-top:auto">Lancer</button></div>
-    <div class="card tile b4"><h3>Répartition des cartes</h3>${boxesHtml(SUBJECTS.map(s=>s.id))}</div>
+    <div class="card tile b4"><h2>Où en sont vos cartes</h2>${boxesHtml(SUBJECTS.map(s=>s.id))}</div>
   </section>`;
 }
 
 /* ================= Défis entre étudiants ================= */
 let DF={to:'',sid:'all',n:10};
 function pageDuels(pre){
-  if(QZ)return crumbs([['Accueil','index.html'],['Défis','defis.html'],[QZ.title,'']])+`<section class="head"><div><h1>${esc(QZ.title)}</h1>${QZ.done?'':'<p class="muted" style="margin-top:5px">Pas de correction avant la fin. Le temps départage les égalités.</p>'}</div></section>`+quizBody();
+  if(QZ){const ans=QZ.duel&&QZ.duel.mode==='answer';
+    return crumbs([['Accueil','index.html'],['Défis','defis.html'],[QZ.title,'']])+`<section class="head"><div><h1>${esc(QZ.title)}</h1>${QZ.done?'':`<p class="muted" style="margin-top:5px">Correction à la fin. Le temps départage les égalités.${ans?' <b>Une seule tentative</b> : quitter la page compte comme une défaite.':''}</p>`}</div></section>`+quizBody()}
   loadSocial();
   const uid=S.user.id,so=S.soc,me=myProfile(),players=playersList();
   if(pre&&players.some(p=>p.id===pre))DF.to=pre;
   if(DF.to&&!players.some(p=>p.id===DF.to))DF.to='';
-  const all=so.chals||[],inc=all.filter(c=>c.to===uid&&c.status==='pending'),sent=all.filter(c=>c.from===uid&&c.status==='pending'),
+  const all=so.chals||[],inc=all.filter(c=>c.to===uid&&c.status==='pending'&&!(S.forfeit||{})[c.id]),sent=all.filter(c=>c.from===uid&&c.status==='pending'),
     done=all.filter(c=>c.status==='done').sort((a,b)=>(b.done||b.created)-(a.done||a.created)).slice(0,20);
   const wins=prog()._duelWins||0,played=done.length;
+  S.title='Défis';
   AFTER.push(()=>{const t=$('#dTo'),s=$('#dSid');if(t)t.onchange=e=>DF.to=e.target.value;if(s)s.onchange=e=>DF.sid=e.target.value;
-    const go=$('#dGo');if(go)go.onclick=()=>{if(!DF.to){toast('Choisissez un adversaire.');return}const opp=players.find(p=>p.id===DF.to);
+    const go=$('#dGo');if(go)go.onclick=()=>{if(!DF.to){toast('Choisissez un adversaire.');$('#dTo').focus();return}const opp=players.find(p=>p.id===DF.to);
       const pool=DF.sid==='all'?SUBJECTS.flatMap(x=>x.quiz):subj(DF.sid).quiz;
       startQuiz(shuffle(pool).slice(0,DF.n),{ctx:'duel',title:'Défi contre '+opp.pseudo,duel:{mode:'new',to:opp.id,toName:opp.pseudo,sid:DF.sid}});render();scrollTo(0,0)};
     $$('[data-play]').forEach(b=>b.onclick=()=>{const c=inc.find(x=>x.id===b.dataset.play);if(!c)return;const list=c.qids.map(id=>QINDEX.get(id)).filter(Boolean);
-      if(!list.length){toast('Ces questions n\'existent plus.');return}startQuiz(list,{ctx:'duel',title:'Défi de '+c.fromName,duel:{mode:'answer',c}});render();scrollTo(0,0)});
+      if(!list.length){toast('Ces questions n\'existent plus.');return}
+      /* Le défi est marqué « commencé » tout de suite : s'il n'est pas terminé, il comptera comme perdu (pas de seconde tentative). */
+      const st=glob('_duelStarted',[]);if(!st.includes(c.id))st.push(c.id);if(st.length>100)st.splice(0,st.length-100);saveNow();
+      startQuiz(list,{ctx:'duel',title:'Défi de '+c.fromName,duel:{mode:'answer',c}});render();scrollTo(0,0)});
     $$('[data-del]').forEach(b=>b.onclick=async()=>{if(!confirm(b.dataset.msg))return;try{await S.api.deleteChallenge(b.dataset.del);loadSocial(true)}catch(e){toast(fr(e).message)}})});
   const card=(c,kind)=>{const meFrom=c.from===uid,opp=S.players[meFrom?c.to:c.from]||{id:meFrom?c.to:c.from,pseudo:meFrom?c.toName:c.fromName},n=c.qids.length,sname=c.sid==='all'?'Toutes matières':(subj(c.sid)||{name:'?'}).name;
     let mid,foot;
-    if(kind==='inc'){mid=`<div class="vs">? – ?<small>${n} questions</small></div>`;foot=`<span class="small muted">${esc(sname)} · ${ago(c.created)} · score caché jusqu'à votre réponse</span><span class="row"><button class="btn ghost sm" data-del="${c.id}" data-msg="Refuser ce défi ?">Refuser</button><button class="btn primary sm" data-play="${c.id}">${ic('swords','sm')}Relever</button></span>`}
-    else if(kind==='sent'){mid=`<div class="vs">${c.fromScore} – ?<small>en attente</small></div>`;foot=`<span class="small muted">${esc(sname)} · envoyé ${ago(c.created)}</span><button class="btn ghost sm" data-del="${c.id}" data-msg="Annuler ce défi ?">Annuler</button>`}
-    else{const r=duelOutcome(c,meFrom),a=meFrom?c.fromScore:c.toScore,b=meFrom?c.toScore:c.fromScore;
+    if(kind==='inc'){mid=`<div class="vs">? – ?<small>${n} questions</small></div>`;foot=`<span class="small muted">${esc(sname)} · reçu ${ago(c.created)} · une seule tentative, score adverse caché jusqu'à la fin</span><span class="row"><button class="btn ghost sm" data-del="${c.id}" data-msg="Refuser ce défi ?">Refuser</button><button class="btn primary sm" data-play="${c.id}">${ic('swords','sm')}Relever le défi</button></span>`}
+    else if(kind==='sent'){mid=`<div class="vs">${c.fromScore} – ?<small>en attente</small></div>`;foot=`<span class="small muted">${esc(sname)} · envoyé ${ago(c.created)} · ${esc(opp.pseudo)} n'a pas encore joué</span><button class="btn ghost sm" data-del="${c.id}" data-msg="Annuler ce défi ?">Annuler</button>`}
+    else{const r=duelOutcome(c,meFrom),a=meFrom?c.fromScore:c.toScore,b=meFrom?c.toScore:c.fromScore,ff=(meFrom?c.toTime:c.fromTime)===9999||(meFrom?c.fromTime:c.toTime)===9999;
       mid=`<div class="vs" style="color:${r==='win'?'var(--ok)':r==='lose'?'var(--bad)':'var(--xp-ink)'}">${a} – ${b}<small>${r==='win'?'Victoire':r==='lose'?'Défaite':'Égalité'}</small></div>`;
-      foot=`<span class="small muted">${esc(sname)} · ${ago(c.done||c.created)} · ${meFrom?c.fromTime:c.toTime} s contre ${meFrom?c.toTime:c.fromTime} s</span><a class="btn sm" href="${U.duels(opp.id)}">Revanche</a>`}
+      foot=`<span class="small muted">${esc(sname)} · ${ago(c.done||c.created)} · ${ff?'abandon':`${meFrom?c.fromTime:c.toTime} s contre ${meFrom?c.toTime:c.fromTime} s`}</span><a class="btn sm" href="${U.duels(opp.id)}">Revanche</a>`}
     return `<div class="card"><div class="duel"><div class="side-p">${avatar(me,40)}<div style="min-width:0"><b>Vous</b><span>Niv. ${levelOf(me.xp).n}</span></div></div>${mid}
       <a class="side-p r" href="${U.player(opp.id)}" style="text-decoration:none;color:inherit"><div style="min-width:0"><b>${esc(opp.pseudo)}</b><span>${opp.xp!=null?'Niv. '+levelOf(opp.xp).n:'Joueur'}</span></div>${avatar(opp,40)}</a></div><div class="duel-foot">${foot}</div></div>`};
-  return crumbs([['Accueil','index.html'],['Défis','']])+`<section class="head"><div><h1>Défis</h1><p class="lede">Défiez un camarade sur une série de questions tirée au hasard : il reçoit exactement les mêmes. Meilleur score gagne, le temps départage. +30 XP par défi joué, +70 XP en cas de victoire.</p></div>
-    <div class="row"><span class="badge xp">${ic('trophy','sm')} ${plural(wins,'victoire')}</span><span class="badge">${plural(played,'défi terminé','défis terminés')}</span></div></section>
-  <section class="card pad grid" style="gap:14px"><h2>Lancer un défi</h2>
+  const launch=`<section class="card pad grid" style="gap:14px"><div><h2>Lancer un défi</h2><p class="muted small" style="margin-top:4px">10 questions · correction à la fin · le temps départage les égalités. Votre adversaire reçoit exactement les mêmes questions.</p></div>
     ${players.length?`<div class="row" style="align-items:flex-end;gap:12px">
       <div class="field" style="flex:1;min-width:200px"><label for="dTo">Adversaire</label><select class="select" id="dTo"><option value="">Choisir un étudiant…</option>${players.map(p=>`<option value="${esc(p.id)}" ${DF.to===p.id?'selected':''}>${esc(p.pseudo)}${p.group?' · '+esc(p.group):''} · niv. ${levelOf(p.xp).n}</option>`).join('')}</select></div>
       <div class="field" style="flex:1;min-width:200px"><label for="dSid">Matière</label><select class="select" id="dSid"><option value="all">Toutes les matières</option>${SUBJECTS.map(s=>`<option value="${s.id}" ${DF.sid===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
-      <button class="btn primary lg" id="dGo">${ic('swords','sm')}Jouer et envoyer (10 questions)</button></div>`
-      :`<p class="muted">${so.top==null?'Chargement des joueurs…':'Aucun autre étudiant inscrit pour l\'instant. Invitez votre promo !'}</p>`}
-  </section>
-  ${inc.length?`<section class="grid"><div class="section-h"><h2>À relever <span class="badge bad">${inc.length}</span></h2></div>${inc.map(c=>card(c,'inc')).join('')}</section>`:''}
+      <button class="btn ${inc.length?'':'primary'} lg" id="dGo">${ic('swords','sm')}Jouer et envoyer</button></div>`
+      :`<p class="muted">${so.top==null?'Chargement des joueurs…':'Aucun autre étudiant inscrit pour l\'instant. Partagez le site avec votre promo.'}</p>`}
+  </section>`;
+  return crumbs([['Accueil','index.html'],['Défis','']])+`<section class="head"><div><h1>Défis</h1><p class="lede">Affrontez un camarade sur une série de questions tirée au hasard. Meilleur score gagne ; à égalité, le plus rapide l'emporte.</p></div>
+    <div class="row"><span class="badge xp">${ic('trophy','sm')} ${plural(wins,'victoire')}</span><span class="badge">${plural(played,'défi terminé','défis terminés')}</span></div></section>
+  ${inc.length?`<section class="grid"><div class="section-h"><h2>À relever <span class="badge blue">${inc.length}</span></h2></div>${inc.map(c=>card(c,'inc')).join('')}</section>`:''}
+  ${launch}
   ${sent.length?`<section class="grid"><div class="section-h"><h2>En attente de réponse</h2></div>${sent.map(c=>card(c,'sent')).join('')}</section>`:''}
   <section class="grid"><div class="section-h"><h2>Historique</h2></div>${done.length?done.map(c=>card(c,'done')).join(''):`<div class="card empty">Aucun défi terminé pour l'instant.</div>`}</section>`;
 }
@@ -746,25 +786,29 @@ function pageLeaderboard(){
   loadSocial();
   const so=S.soc,me=myProfile(),list=freshTop().filter(p=>!p.hidden||p.id===me.id);
   const pod=[list[1],list[0],list[2]];
+  S.title='Classement';
   return crumbs([['Accueil','index.html'],['Classement','']])+`<section class="head"><div><h1>Classement</h1><p class="lede">Les XP s'obtiennent en révisant : bonnes réponses, cartes, cours lus, exercices, entraînements et défis.</p></div>
-    <div class="row"><span class="badge blue">${ic('users','sm')} ${so.count!=null?plural(so.count,'étudiant inscrit','étudiants inscrits'):'…'}</span><span class="badge xp">${ic('trophy','sm')} Votre rang : ${so.rank?'#'+so.rank:'—'}</span></div></section>
-  ${list.length?`<section class="card pad"><div class="podium">${pod.map((p,i)=>{if(!p)return '<div></div>';const rk=[2,1,3][i];return `<a class="p${rk}" href="${U.player(p.id)}">${rk===1?`<span class="crown">${ic('crown','lg')}</span>`:''}${ringAv(p,rk===1?78:62)}<span class="nm">${esc(p.pseudo)}</span><span class="badge xp">${fmt(p.xp)} XP</span><div class="step">${rk}</div></a>`}).join('')}</div></section>
-  <section class="card lb">${list.map((p,i)=>`<a class="lb-row ${p.id===me.id?'mine':''}" href="${U.player(p.id)}"><span class="rk">${i+1}</span>
-    <span class="who">${avatar(p,38)}<span style="min-width:0"><b>${esc(p.pseudo)}${p.id===me.id?' (vous)':''}</b><span>Niv. ${levelOf(p.xp).n} · ${esc(levelOf(p.xp).title)}${p.group?' · '+esc(p.group):''}</span></span></span>
-    <span class="xpv">${fmt(p.xp)} XP</span>${p.id!==me.id?`<span class="act btn sm" data-duel="${esc(p.id)}">${ic('swords','sm')}Défier</span>`:'<span class="act"></span>'}</a>`).join('')}</section>`
-  :`<section class="card empty">${so.top==null?'Chargement du classement…':'Personne dans le classement pour l\'instant.'}</section>`}`
-  +(AFTER.push(()=>$$('[data-duel]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();location.href=U.duels(b.dataset.duel)})),'');
+    <div class="row"><span class="badge blue">${ic('users','sm')} ${so.count!=null?plural(so.count,'étudiant inscrit','étudiants inscrits'):'…'}</span>${so.count>1?`<span class="badge xp">${ic('trophy','sm')} Votre rang : ${so.rank?'#'+so.rank:'—'}</span>`:''}</div></section>
+  ${list.length?`${list.length>=3?`<section class="card pad podium-card"><div class="podium">${pod.map((p,i)=>{if(!p)return '<div></div>';const rk=[2,1,3][i];return `<a class="p${rk}" href="${U.player(p.id)}">${rk===1?`<span class="crown">${ic('crown','lg')}</span>`:''}${ringAv(p,rk===1?78:62)}<span class="nm">${esc(p.pseudo)}</span><span class="badge xp">${fmt(p.xp)} XP</span><div class="step" aria-label="Rang ${rk}">${rk}</div></a>`}).join('')}</div></section>`:''}
+  <section class="card lb" aria-label="Classement complet">${list.map((p,i)=>`<div class="lb-row ${p.id===me.id?'mine':''}"><span class="rk">${i+1}</span>
+    <span class="who">${avatar(p,38)}<span style="min-width:0"><a class="nm" href="${p.id===me.id?'profil.html':U.player(p.id)}">${esc(p.pseudo)}${p.id===me.id?' (vous)':''}</a><span>Niv. ${levelOf(p.xp).n} · ${esc(levelOf(p.xp).title)}${p.group?' · '+esc(p.group):''}</span></span></span>
+    <span class="xpv">${fmt(p.xp)} XP</span>${p.id!==me.id?`<a class="act btn sm" href="${U.duels(p.id)}" aria-label="Défier ${esc(p.pseudo)}">${ic('swords','sm')}Défier</a>`:'<span class="act"></span>'}</div>`).join('')}</section>
+  ${list.length<2&&so.top!=null?`<section class="card pad-sm muted small">Vous êtes seul pour l'instant. Partagez le site avec votre promo pour vous mesurer à elle.</section>`:''}`
+  :`<section class="card empty">${so.top==null?'Chargement du classement…':'Personne dans le classement pour l\'instant.'}</section>`}`;
 }
 function pagePlayer(id){
   const me=myProfile();if(!id)return notFound('Aucun joueur indiqué.');if(id===me.id){location.replace('profil.html');return ''}
   let p=S.players[id];
   if(!p){S.api.getProfile(id).then(x=>{S.players[id]=x||{id,pseudo:'Joueur introuvable',xp:0,missing:true};render()}).catch(()=>{S.players[id]={id,pseudo:'Joueur introuvable',xp:0,missing:true};render()});
-    return `<section class="card empty"><div class="spin" style="margin:0 auto"></div></section>`}
+    return `<section class="card empty"><div class="spin" style="margin:0 auto" role="status" aria-label="Chargement"></div></section>`}
   if(p.missing)return `<section class="card pad"><h1>Joueur introuvable</h1><p style="margin-top:8px"><a href="classement.html">Retour au classement</a></p></section>`;
   const L=levelOf(p.xp),earned=new Set(p.badges||[]);
+  S.title=p.pseudo;
+  /* Bilan des défis contre ce joueur. */
+  const vs=(S.soc.chals||[]).filter(c=>c.status==='done'&&(c.from===p.id||c.to===p.id));let w=0,l=0;vs.forEach(c=>{const r=duelOutcome(c,c.from===me.id);if(r==='win')w++;else if(r==='lose')l++});
   return crumbs([['Accueil','index.html'],['Classement','classement.html'],[p.pseudo,'']])+`<section class="card pad grid" style="gap:20px"><div class="profile-head">${ringAv(p,104)}<div style="min-width:0;flex:1"><p class="eyebrow">${esc(L.title)}</p><h1>${esc(p.pseudo)}</h1>
     <p class="muted" style="margin-top:4px">${[p.group,p.bio].filter(Boolean).map(esc).join(' · ')||'Étudiant GCS1'}</p>
-    <div class="stat-row" style="margin-top:14px"><div><b>${L.n}</b><span>niveau</span></div><div><b>${fmt(p.xp)}</b><span>XP</span></div><div><b>${p.streak||0}</b><span>jours de série</span></div><div><b>${earned.size}</b><span>badges</span></div></div></div>
+    <div class="stat-row" style="margin-top:14px"><div><b>${L.n}</b><span>niveau</span></div><div><b>${fmt(p.xp)}</b><span>XP</span></div><div><b>${p.streak||0}</b><span>jours de série</span></div><div><b>${earned.size}</b><span>badges</span></div>${vs.length?`<div><b>${w} – ${l}</b><span>vos victoires – défaites</span></div>`:''}</div></div>
     <a class="btn primary lg" href="${U.duels(p.id)}">${ic('swords','sm')}Défier ${esc(p.pseudo)}</a></div></section>
   <section class="card pad grid"><h2>Badges</h2>${badgesHtml(earned)}</section>`;
 }
@@ -781,18 +825,25 @@ async function processPhoto(file){
     let d=c.toDataURL('image/webp',.82);if(!d.startsWith('data:image/webp'))d=c.toDataURL('image/jpeg',.85);if(d.length>110000)d=c.toDataURL('image/jpeg',.6);
     if(d.length>118000)throw new Error('Image trop détaillée, essayez-en une autre.');return d}
   finally{URL.revokeObjectURL(url)}}
+const XP_RULES=[['Bonne réponse (QCM, défi, partiel blanc)','+10'],['Série de 5 questions ou plus terminée','+20'],['Sans faute sur 10 questions ou plus','+50'],['Section de cours lue (une fois)','+15'],['Carte révisée','+3 si vous saviez, +1 sinon'],['Exercice trouvé sans le corrigé (une fois)','+40'],['Bonne réponse en entraînement','+5'],['Partiel blanc terminé','+30'],['Défi joué','+30'],['Défi gagné','+70 en plus'],['Première révision du jour','+10 par jour de série (70 max.)']];
+function activityHtml(){const act=glob('_act',{}),days=[...Array(28)].map((_,i)=>addDays(dayKey(),i-27)),max=Math.max(5,...days.map(d=>act[d]||0)),tot=days.reduce((n,d)=>n+(act[d]||0),0);
+  const all=SUBJECTS.map(stats),avg=all.length?Math.round(all.reduce((a,b)=>a+b.pct,0)/all.length):0;
+  return `<section class="grid g2"><div class="card tile"><div class="row spread"><div class="t-h">${tic('activity')}Activité sur 4 semaines</div><span class="badge">${plural(tot,'action')}</span></div>
+    <div class="chart c28" role="img" aria-label="Activité des 28 derniers jours : ${plural(tot,'action')}">${days.map(d=>`<i class="${act[d]?'':'z'}" style="height:${Math.max(5,Math.round(100*(act[d]||0)/max))}%" title="${new Date(d+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})} : ${act[d]||0}"></i>`).join('')}</div></div>
+    <div class="card tile"><div class="t-h">${tic('target')}Maîtrise globale</div><div class="row" style="gap:14px;flex-wrap:nowrap"><span class="pring" style="--p:${avg};--c:var(--ok)" aria-label="Maîtrise ${avg} %"><span>${avg}%</span></span><p class="small muted">Moyenne des matières : meilleur QCM (40 %), cartes sues (30 %), exercices (15 %) et cours lus (15 %).</p></div></div></section>`}
 function pageProfile(){
   const me=myProfile(),L=levelOf(me.xp),earned=new Set(earnedBadges()),set=glob('_settings',{}),so=S.soc;
   AFTER.push(()=>{
     const file=$('#pPhoto');file.onchange=async()=>{const f=file.files[0];if(!f)return;try{const d=await processPhoto(f);S.me.avatar=d;saveSoon();toast('Photo mise à jour.');render()}catch(e){toast(e.message)}};
     const rm=$('#pRm');if(rm)rm.onclick=()=>{S.me.avatar='';saveSoon();render()};
     $('#pForm').onsubmit=async e=>{e.preventDefault();const n=$('#pName').value.trim();
-      if(!/^[\p{L}0-9 _.-]{2,24}$/u.test(n)){toast('Le pseudo doit faire 2 à 24 caractères (lettres, chiffres, espace, point, tiret).');return}
+      if(!PSEUDO_RE.test(n)){toast(PSEUDO_MSG);$('#pName').setAttribute('aria-invalid','true');$('#pName').focus();return}
       Object.assign(S.me,{pseudo:n,group:$('#pGroup').value.trim().slice(0,20),bio:$('#pBio').value.trim().slice(0,80),hidden:!$('#pShow').checked});
       try{await S.api.setName(n)}catch(_){} await saveNow();loadSocial(true);toast('Profil enregistré.');render()};
     $('#pBio').oninput=e=>$('#pBioN').textContent=e.target.value.length;
     $('#aOut').onclick=async()=>{QZ=null;FC=null;S.loggingOut=true;await S.api.signOut()};
-    $('#aDate').onchange=e=>{set.examDate=e.target.value||null;if(!set.examDate)delete set.examDate;saveSoon();toast(set.examDate?'Date des partiels enregistrée.':'Date effacée.')};
+    $('#examDate').onchange=e=>{set.examDate=e.target.value||null;if(!set.examDate)delete set.examDate;saveSoon();toast(set.examDate?'Date des partiels enregistrée.':'Date effacée.')};
+    if(location.hash==='#examDate'&&!S.scrolled){S.scrolled=true;const d=$('#examDate');d.scrollIntoView({block:'center'});d.focus({preventScroll:true})}
     $('#aReset').onclick=()=>{if(confirm('Effacer votre progression (QCM, cartes, exercices, série) ? Vos XP et badges sont conservés. Action définitive.')){const keep={_xp:prog()._xp,_duelWins:prog()._duelWins,_duelsSeen:prog()._duelsSeen,_bestStreak:prog()._bestStreak,_perfect:prog()._perfect,_cardReviews:prog()._cardReviews};S.data.progress=keep;saveSoon();FC=null;QZ=null;toast('Progression effacée.');render()}};
     const pw=$('#aPw');if(pw)pw.onclick=async()=>{try{await S.api.reset(S.user.email);toast('Lien envoyé à '+S.user.email)}catch(e){toast(fr(e).message)}};
     $('#aDel').onclick=async()=>{if(!confirm('Supprimer définitivement votre compte, votre profil et votre progression ?'))return;try{await S.api.remove(S.user.id);toast('Compte supprimé.')}catch(e){toast(e.code==='auth/requires-recent-login'?'Par sécurité, déconnectez-vous puis reconnectez-vous avant de supprimer le compte.':fr(e).message)}}});
@@ -802,21 +853,24 @@ function pageProfile(){
     <div class="stat-row" style="margin-top:14px"><div><b>${L.n}</b><span>niveau</span></div><div><b>${so.rank?'#'+so.rank:'—'}</b><span>rang${so.count?' / '+so.count:''}</span></div><div><b>${streak()}</b><span>jours de série</span></div><div><b>${earned.size}/${BADGES.length}</b><span>badges</span></div><div><b>${prog()._duelWins||0}</b><span>défis gagnés</span></div></div></div></div></section>
   <section class="grid g2">
     <form class="card pad grid" id="pForm" style="gap:16px"><h2>Mon profil</h2>
-      <div class="photo-edit">${avatar(me,72)}<div class="grid" style="gap:8px"><label class="btn" for="pPhoto" style="cursor:pointer">${ic('camera','sm')}${okPhoto(me.avatar)?'Changer la photo':'Ajouter une photo'}</label>
-        <input type="file" id="pPhoto" accept="image/jpeg,image/png,image/webp" class="sr">${okPhoto(me.avatar)?`<button type="button" class="btn ghost sm danger" id="pRm">${ic('trash','sm')}Retirer</button>`:''}<span class="hint2 small muted">Recadrée en carré 192 px, visible par les étudiants connectés.</span></div></div>
-      <div class="field"><label for="pName">Pseudo affiché</label><input class="input" id="pName" value="${esc(me.pseudo)}" maxlength="24" required></div>
+      <div class="photo-edit">${avatar(me,72)}<div class="grid" style="gap:8px"><input type="file" id="pPhoto" accept="image/jpeg,image/png,image/webp" class="sr file-in"><label class="btn" for="pPhoto" style="cursor:pointer">${ic('camera','sm')}${okPhoto(me.avatar)?'Changer la photo':'Ajouter une photo'}</label>
+        ${okPhoto(me.avatar)?`<button type="button" class="btn ghost sm danger" id="pRm">${ic('trash','sm')}Retirer</button>`:''}<span class="hint2 small muted">Recadrée en carré 192 px, visible par les étudiants connectés.</span></div></div>
+      <div class="field"><label for="pName">Pseudo</label><input class="input" id="pName" value="${esc(me.pseudo)}" maxlength="24" required aria-describedby="pNameH"><span class="hint2" id="pNameH">Visible dans le classement et les défis.</span></div>
       <div class="field"><label for="pGroup">Groupe</label><input class="input" id="pGroup" value="${esc(me.group)}" maxlength="20" placeholder="ex. B1-4"></div>
       <div class="field"><label for="pBio">Bio <span class="muted small">(<span id="pBioN">${me.bio.length}</span>/80)</span></label><input class="input" id="pBio" value="${esc(me.bio)}" maxlength="80" placeholder="ex. Team blue, fan de Wazuh"></div>
       <label class="switch"><input type="checkbox" id="pShow" ${me.hidden?'':'checked'}> Apparaître dans le classement et pouvoir être défié</label>
       <div class="row" style="justify-content:flex-end"><button class="btn primary" type="submit">Enregistrer</button></div></form>
     <div class="card pad grid" style="gap:16px;align-content:start"><h2>Réglages</h2>
-      <div class="field"><label for="aDate">${ic('calendar','sm')} Date des partiels</label><input class="input" type="date" id="aDate" value="${esc(set.examDate||'')}" style="max-width:220px"><span class="hint2">Affiche un compte à rebours sur le tableau de bord.</span></div>
+      <div class="field"><label for="examDate">${ic('calendar','sm')} Date des partiels</label><input class="input" type="date" id="examDate" value="${esc(set.examDate||'')}" style="max-width:220px"><span class="hint2">Affiche un compte à rebours sur le tableau de bord.</span></div>
       <div class="row">${S.api.mode==='firebase'?`<button class="btn" id="aPw">Changer de mot de passe</button>`:''}<button class="btn" id="aOut">${ic('logout','sm')}Se déconnecter</button></div>
       <div style="border-top:1px solid var(--border);padding-top:14px" class="row"><button class="btn" id="aReset">${ic('rotate','sm')}Effacer ma progression</button><button class="btn danger" id="aDel">${ic('trash','sm')}Supprimer mon compte</button></div></div>
   </section>
   <section class="card pad grid"><div class="row spread"><h2>Badges</h2><span class="badge xp">${earned.size}/${BADGES.length}</span></div>${badgesHtml(earned)}</section>
+  ${activityHtml()}
   <section class="card pad"><h2>Progression par matière</h2>
-    <div class="tbl"><table><tr><th>Matière</th><th>Cours lus</th><th>Meilleur QCM</th><th>Cartes maîtrisées</th><th>Exercices</th><th>Erreurs</th></tr>${SUBJECTS.map(s=>{const t=stats(s);return `<tr><td><a href="${U.sub(s.id)}">${esc(s.name)}</a></td><td>${t.rd}/${t.nf}</td><td>${t.runs?t.best+' %':'—'}</td><td>${t.mast}/${t.nc}</td><td>${t.ex}/${t.ne}</td><td>${t.wrong}</td></tr>`}).join('')}</table></div></section>`;
+    <div class="tbl"><table><tr><th>Matière</th><th>Cours lus</th><th>Meilleur QCM</th><th>Cartes maîtrisées</th><th>Exercices</th><th>Erreurs</th></tr>${SUBJECTS.map(s=>{const t=stats(s);return `<tr><td><a href="${U.sub(s.id)}">${esc(s.name)}</a></td><td>${t.rd}/${t.nf}</td><td>${t.runs?t.best+' %':'—'}</td><td>${t.mast}/${t.nc}</td><td>${t.ex}/${t.ne}</td><td>${t.wrong}</td></tr>`}).join('')}</table></div></section>
+  <section class="card pad"><h2>Comment gagner des XP</h2><div class="tbl"><table><tr><th>Action</th><th>XP</th></tr>${XP_RULES.map(([a,x])=>`<tr><td>${a}</td><td><b>${x}</b></td></tr>`).join('')}</table></div>
+    <p class="small muted" style="margin-top:10px">Pendant un défi ou un partiel blanc, les XP sont comptés à la fin pour ne pas trahir les réponses.</p></section>`;
 }
 
 /* ================= Partiel blanc ================= */
@@ -824,20 +878,26 @@ let PB={sel:new Set(SUBJECTS.map(s=>s.id)),n:30,timer:30};
 function pagePartiel(){
   if(QZ)return crumbs([['Accueil','index.html'],['Partiel blanc','partiel.html'],[QZ.ctx==='partiel'?'En cours':QZ.title,'']])+`<section class="head"><div><h1>${esc(QZ.title)}</h1></div></section>`+quizBody();
   const hist=glob('_partiels',[]);
-  AFTER.push(()=>{$$('[data-ps]').forEach(c=>c.onchange=()=>{c.checked?PB.sel.add(c.dataset.ps):PB.sel.delete(c.dataset.ps);$('#pbGo').disabled=!PB.sel.size});
+  const presets=[{ids:SUBJECTS.map(s=>s.id),n:30,t:30,l:'Partiel complet',d:'Toutes les matières',col:'var(--primary-solid)',main:1}]
+    .concat(SUBJECTS.map(s=>({ids:[s.id],n:Math.min(20,s.quiz.length),t:20,l:s.name,d:'',col:s.col})));
+  const start=(ids,n,t,l)=>{const pool=SUBJECTS.filter(s=>ids.includes(s.id)).flatMap(s=>s.quiz),k=Math.min(n,pool.length);
+    startQuiz(shuffle(pool).slice(0,k),{ctx:'partiel',title:(l||'Partiel blanc')+' · '+plural(k,'question'),timer:t});render();scrollTo(0,0)};
+  AFTER.push(()=>{$$('[data-pre]').forEach(b=>b.onclick=()=>{const p=presets[+b.dataset.pre];start(p.ids,p.n,p.t,p.main?'Partiel complet':'Partiel · '+p.l)});
+    $$('[data-ps]').forEach(c=>c.onchange=()=>{c.checked?PB.sel.add(c.dataset.ps):PB.sel.delete(c.dataset.ps);$('#pbGo').disabled=!PB.sel.size});
     $('#pbN').onchange=e=>PB.n=+e.target.value;$('#pbT').onchange=e=>PB.timer=+e.target.value;
-    $('#pbGo').onclick=()=>{const pool=SUBJECTS.filter(s=>PB.sel.has(s.id)).flatMap(s=>s.quiz);
-      startQuiz(shuffle(pool).slice(0,PB.n),{ctx:'partiel',title:'Partiel blanc · '+Math.min(PB.n,pool.length)+' questions',timer:PB.timer});render()}});
-  return crumbs([['Accueil','index.html'],['Partiel blanc','']])+`<section class="head"><div><h1>Partiel blanc</h1><p class="lede">Questions tirées au hasard, chrono, et <b>aucune correction avant la fin</b> : comme le jour J. +30 XP à la fin.</p></div></section>
-  <section class="card pad grid">
-    <h3>Matières</h3>
-    <div class="grid g3">${SUBJECTS.map(s=>`<label class="check"><input type="checkbox" data-ps="${s.id}" ${PB.sel.has(s.id)?'checked':''}><span class="dot" style="width:9px;height:9px;border-radius:3px;background:${s.col}"></span><span>${esc(s.name)} <span class="muted small">(${s.quiz.length})</span></span></label>`).join('')}</div>
-    <div class="row" style="gap:14px">
-      <label class="row small" style="font-weight:600">Questions <select id="pbN" class="select">${[10,20,30,40,60].map(n=>`<option ${PB.n===n?'selected':''}>${n}</option>`).join('')}</select></label>
-      <label class="row small" style="font-weight:600">Durée <select id="pbT" class="select">${[[0,'sans chrono'],[10,'10 min'],[20,'20 min'],[30,'30 min'],[45,'45 min'],[60,'1 h']].map(([v,l])=>`<option value="${v}" ${PB.timer===v?'selected':''}>${l}</option>`).join('')}</select></label>
-      <button class="btn primary lg" id="pbGo">${ic('grad','sm')}Commencer</button></div>
+    $('#pbGo').onclick=()=>start([...PB.sel],PB.n,PB.timer,'Partiel blanc')});
+  return crumbs([['Accueil','index.html'],['Partiel blanc','']])+`<section class="head"><div><h1>Partiel blanc</h1><p class="lede">Questions tirées au hasard, chronomètre et <b>aucune correction avant la fin</b> : comme le jour J.</p></div></section>
+  <section class="card pad grid"><h2>Prêts à lancer</h2>
+    <div class="grid g3">${presets.map((p,i)=>`<button type="button" class="preset ${p.main?'main':''}" data-pre="${i}"><span class="dot" style="background:${p.col}"></span><span><b>${esc(p.main?p.l:'Partiel · '+p.l)}</b><span>${p.d?esc(p.d)+' · ':''}${p.n} questions · ${p.t} min</span></span>${ic('arrow','sm')}</button>`).join('')}</div>
   </section>
-  ${hist.length?`<section class="card pad"><h3>Mes derniers partiels blancs</h3><div class="tbl"><table><tr><th>Date</th><th>Questions</th><th>Score</th></tr>${hist.map(h=>`<tr><td>${new Date(h.at).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}</td><td>${h.n}</td><td><b>${h.pct} %</b></td></tr>`).join('')}</table></div></section>`:''}`;
+  <section class="card pad grid"><h2>Partiel sur mesure</h2>
+    <fieldset class="grid g3" style="border:0;padding:0;margin:0"><legend class="small muted" style="margin-bottom:8px">Matières incluses</legend>${SUBJECTS.map(s=>`<label class="check"><input type="checkbox" data-ps="${s.id}" ${PB.sel.has(s.id)?'checked':''}><span class="dot" style="width:9px;height:9px;border-radius:3px;background:${s.col};flex:none"></span><span>${esc(s.name)} <span class="muted small">(${s.quiz.length})</span></span></label>`).join('')}</fieldset>
+    <div class="row" style="gap:14px;align-items:flex-end">
+      <div class="field"><label for="pbN">Questions</label><select id="pbN" class="select">${[10,20,30,40,60].map(n=>`<option ${PB.n===n?'selected':''}>${n}</option>`).join('')}</select></div>
+      <div class="field"><label for="pbT">Durée</label><select id="pbT" class="select">${[[0,'sans chrono'],[10,'10 min'],[20,'20 min'],[30,'30 min'],[45,'45 min'],[60,'1 h']].map(([v,l])=>`<option value="${v}" ${PB.timer===v?'selected':''}>${l}</option>`).join('')}</select></div>
+      <button class="btn lg" id="pbGo" ${PB.sel.size?'':'disabled'}>${ic('grad','sm')}Commencer</button></div>
+  </section>
+  ${hist.length?`<section class="card pad"><h2>Mes derniers partiels blancs</h2><div class="tbl"><table><tr><th>Date</th><th>Questions</th><th>Score</th></tr>${hist.map(h=>`<tr><td>${new Date(h.at).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}</td><td>${h.n}</td><td><b>${h.pct} %</b></td></tr>`).join('')}</table></div></section>`:''}`;
 }
 
 /* ================= Entraînements ================= */
@@ -849,9 +909,9 @@ function pageDrills(id){
     ['osi','layers','#7c3aed','Modèle OSI','Remettre les couches dans l\'ordre et placer chaque protocole.'],
     ['commandes','terminal','#16a34a','Commandes','Linux, Git, Windows, Docker, Squid : la bonne commande pour chaque tâche.']];
   const dr=glob('_drills',{});
-  const cur=list.find(x=>x[0]===id);
-  const head=crumbs(cur?[['Accueil','index.html'],['Entraînements','entrainements.html'],[cur[3],'']]:[['Accueil','index.html'],['Entraînements','']])+`<section class="head"><div><h1>${cur?esc(cur[3]):'Entraînements'}</h1><p class="lede">Des exercices générés à l'infini sur ce qui tombe à coup sûr. +5 XP par bonne réponse.</p></div></section>
-  <nav class="tabs">${list.map(([k,i,,l])=>`<a href="entrainements.html?t=${k}" ${id===k?'aria-current="page"':''}>${ic(i,'sm')}${l}</a>`).join('')}</nav>`;
+  const cur=list.find(x=>x[0]===id);if(cur)S.title=cur[3]+' – Entraînement';
+  const head=crumbs(cur?[['Accueil','index.html'],['Entraînements','entrainements.html'],[cur[3],'']]:[['Accueil','index.html'],['Entraînements','']])+`<section class="head"><div><h1>${cur?esc(cur[3]):'Entraînements'}</h1><p class="lede">Des exercices générés à l'infini sur ce qui tombe à coup sûr.</p></div></section>
+  <nav class="tabs" aria-label="Entraînements">${list.map(([k,i,,l])=>`<a href="entrainements.html?t=${k}" ${id===k?'aria-current="page"':''}>${ic(i,'sm')}${l}</a>`).join('')}</nav>`;
   if(id==='sousreseaux')return head+drillSubnet();
   if(id==='ports')return head+drillPorts();
   if(id==='osi')return head+drillOsi();
@@ -990,9 +1050,9 @@ function buildIndex(){IDX=[];
   PAGES_IDX.forEach(([p,i,l])=>IDX.push({k:'Page',i,t:l,s:'',h:p,f:fold(l)}));
   [['sousreseaux','Sous-réseaux'],['ports','Ports'],['osi','Modèle OSI'],['commandes','Commandes']].forEach(([k,l])=>IDX.push({k:'Entraînement',i:'zap',t:'Entraînement : '+l,s:'',h:'entrainements.html?t='+k,f:fold('entrainement exercice '+l)}));
   SUBJECTS.forEach(s=>{IDX.push({k:'Matière',i:s.ic,t:s.name,s:s.short,h:U.sub(s.id),f:fold(s.name+' '+s.short)});
-    s.fiche.forEach((f,i)=>{const txt=plain(f.h);IDX.push({k:'Cours · '+s.name,i:'bookOpen',t:f.t,s:'',raw:txt,h:`${U.sub(s.id)}#s${i}`,f:fold(f.t+' '+txt),tf:fold(f.t)})});
+    s.fiche.forEach((f,i)=>{const txt=plain(f.h);IDX.push({k:'Cours · '+s.name,i:'bookOpen',t:f.t,s:'',raw:txt,h:`${U.sub(s.id)}#s${i+1}`,f:fold(f.t+' '+txt),tf:fold(f.t)})});
     s.cards.forEach(c=>{const a=plain(c[0]),b=plain(c[1]);IDX.push({k:'Carte · '+s.name,i:'layers',t:a,s:b,h:'lexique.html?q='+encodeURIComponent(a.slice(0,40)),f:fold(a+' '+b),tf:fold(a)})});
-    s.quiz.forEach(q=>{const ans=q.a.map(x=>q.o[x]).join(' · ');IDX.push({k:'QCM · '+s.name,i:'circleCheck',t:q.q,s:'Réponse : '+ans,h:U.sub(s.id,'qcm'),f:fold(q.q+' '+ans+' '+(q.e||'')),tf:fold(q.q)})});
+    s.quiz.forEach(q=>{const ans=q.a.map(x=>q.o[x]).join(' · ');IDX.push({k:'QCM · '+s.name,i:'circleCheck',t:q.q,s:'',h:U.sub(s.id,'qcm'),f:fold(q.q+' '+ans+' '+(q.e||'')),tf:fold(q.q)})});
     s.exos.forEach(x=>IDX.push({k:'Exercice · '+s.name,i:'pencil',t:x.t,s:'',h:U.sub(s.id,'exos'),f:fold(x.t+' '+plain(x.q)),tf:fold(x.t)}))})}
 function searchIdx(q){if(!IDX)buildIndex();const w=fold(q).split(/\s+/).filter(Boolean);
   const players=(S.soc.top||[]).filter(p=>!p.hidden&&p.id!==S.user.id).map(p=>({k:'Joueur',i:'user',t:p.pseudo,s:'Niv. '+levelOf(p.xp).n+' · '+fmt(p.xp)+' XP',h:U.player(p.id),f:fold(p.pseudo+' '+(p.group||''))}));
@@ -1002,18 +1062,18 @@ function searchIdx(q){if(!IDX)buildIndex();const w=fold(q).split(/\s+/).filter(B
     let s=x.s;if(x.raw&&!s){const pos=x.f.indexOf(w[0]);const a=Math.max(0,pos-50);s=(a?'…':'')+x.raw.slice(a,a+140)+'…'}res.push({...x,s,sc})}
   return res.sort((a,b)=>b.sc-a.sc).slice(0,40)}
 let PAL={sel:0,res:[]};
-function openPalette(){if($('#palette'))return;if(S.menu){S.menu=false;render()}const ov=document.createElement('div');ov.className='overlay';ov.id='palette';ov.setAttribute('role','dialog');ov.setAttribute('aria-label','Recherche');
+function openPalette(){if($('#palette'))return;if(S.menu){S.menu=false;render()}const ov=document.createElement('div');ov.className='overlay';ov.id='palette';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label','Recherche');PAL.ret=document.activeElement;
   ov.innerHTML=`<div class="palette"><div class="pin">${ic('search')}<input id="palQ" placeholder="Rechercher un cours, une notion, un joueur…" autocomplete="off" spellcheck="false" aria-label="Rechercher"><kbd>Échap</kbd></div><div class="res" id="palR"></div></div>`;
   document.body.appendChild(ov);ov.onclick=e=>{if(e.target===ov)closePalette()};
   const inp=$('#palQ');inp.oninput=()=>{PAL.sel=0;drawPalette(inp.value)};drawPalette('');inp.focus()}
-function closePalette(){const p=$('#palette');if(p)p.remove()}
+function closePalette(nav){const p=$('#palette');if(!p)return;p.remove();const r=PAL.ret;PAL.ret=null;if(!nav&&r&&document.contains(r))r.focus({preventScroll:true})}
 function drawPalette(q){PAL.res=searchIdx(q);const box=$('#palR');
   box.innerHTML=PAL.res.length?PAL.res.map((x,i)=>`<a href="${x.h}" class="${i===PAL.sel?'on':''}" data-i="${i}">${ic(x.i||'search')}<span style="min-width:0"><b>${esc(x.t)}</b><span>${esc(x.k)}${x.s?' · '+esc(x.s.length>160?x.s.slice(0,160)+'…':x.s):''}</span></span></a>`).join(''):`<div class="empty">Aucun résultat pour « ${esc(q)} »</div>`;
-  $$('#palR a').forEach(a=>{a.onclick=()=>closePalette();a.onmousemove=()=>{if(PAL.sel!==+a.dataset.i){PAL.sel=+a.dataset.i;$$('#palR a').forEach(b=>b.classList.toggle('on',b===a))}}})}
+  $$('#palR a').forEach(a=>{a.onclick=()=>closePalette(true);a.onmousemove=()=>{if(PAL.sel!==+a.dataset.i){PAL.sel=+a.dataset.i;$$('#palR a').forEach(b=>b.classList.toggle('on',b===a))}}})}
 function paletteKey(e){if(e.key==='Escape'){e.preventDefault();closePalette();return}
   const items=$$('#palR a');if(!items.length)return;
   if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();PAL.sel=(PAL.sel+(e.key==='ArrowDown'?1:-1)+items.length)%items.length;items.forEach((a,i)=>a.classList.toggle('on',i===PAL.sel));items[PAL.sel].scrollIntoView({block:'nearest'})}
-  else if(e.key==='Enter'){e.preventDefault();const a=items[PAL.sel];closePalette();location.href=a.getAttribute('href')}}
+  else if(e.key==='Enter'){e.preventDefault();const a=items[PAL.sel];closePalette(true);location.href=a.getAttribute('href')}}
 
 boot();
 })();

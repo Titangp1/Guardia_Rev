@@ -226,7 +226,15 @@ quiz:[
 {q:'Dans Squid, quelle directive permet de NE PAS déchiffrer les sites bancaires ?',o:['ssl_bump bump banques','ssl_bump splice banques','http_access deny banques','cache deny banques'],a:[1],e:'splice laisse passer le tunnel TLS sans l\'ouvrir.'}
 ],
 exos:[
-{t:'Analyse de configuration Squid',src:'ancien partiel',pts:'4 × 1 pt',q:`<p>À partir du fichier <code>squid.conf</code> fourni (acl localnet …, acl SSL_ports port 443, acl Safe_ports port 80 21 443 70 210 1025-65535 280 488 591 777, http_access deny !Safe_ports, http_access deny CONNECT !SSL_ports, http_access allow localnet, http_access allow localhost, http_access deny all, http_port 3128) :</p><ol><li>Quels réseaux sont autorisés à accéder au proxy ?</li><li>Quelle est la différence entre Safe_ports et SSL_ports ? Donnez un exemple d'usage.</li><li>Expliquez la ligne <code>http_access deny CONNECT !SSL_ports</code>.</li><li>Quel est le rôle du bloc ssl_bump ? Expliquez brièvement le processus d'inspection HTTPS.</li></ol>`,r:`
+{t:'Analyse de configuration Squid',src:'ancien partiel',pts:'4 × 1 pt',q:`<p>À partir du fichier <code>squid.conf</code> fourni (extrait) :</p><pre><code>acl localnet src …   # réseaux privés
+acl SSL_ports port 443
+acl Safe_ports port 80 21 443 70 210 1025-65535 280 488 591 777
+http_access deny !Safe_ports
+http_access deny CONNECT !SSL_ports
+http_access allow localnet
+http_access allow localhost
+http_access deny all
+http_port 3128</code></pre><ol><li>Quels réseaux sont autorisés à accéder au proxy ?</li><li>Quelle est la différence entre Safe_ports et SSL_ports ? Donnez un exemple d'usage.</li><li>Expliquez la ligne <code>http_access deny CONNECT !SSL_ports</code>.</li><li>Quel est le rôle du bloc ssl_bump ? Expliquez brièvement le processus d'inspection HTTPS.</li></ol>`,r:`
 <ol><li>Les réseaux de l'ACL <b>localnet</b> (<code>http_access allow localnet</code>) : 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 (RFC 1918), 100.64.0.0/10 (CGN), 169.254.0.0/16 (lien local), 0.0.0.1-0.255.255.255, fc00::/7 et fe80::/10 en IPv6 ; plus <b>localhost</b> (le proxy lui-même). Tout le reste est refusé par <code>deny all</code>.</li>
 <li><b>Safe_ports</b> = ports de destination autorisés pour n'importe quelle requête (80, 21, 443, 1025-65535…) ; <code>deny !Safe_ports</code> refuse par exemple une requête vers le port 25 (SMTP) ou 23 (Telnet). <b>SSL_ports</b> = ports autorisés pour la méthode CONNECT, c'est-à-dire les tunnels chiffrés HTTPS : 443. Exemple : <code>https://site.fr</code> fait un CONNECT site.fr:443, accepté.</li>
 <li>Refuse toute requête de méthode <b>CONNECT</b> dont le port <b>n'est pas</b> dans SSL_ports : on ne peut ouvrir un tunnel qu'en 443. Empêche de détourner le proxy pour tunneler un autre protocole (SSH sur 22, etc.).</li>
