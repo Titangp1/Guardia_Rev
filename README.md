@@ -6,7 +6,7 @@
 
 <p>
 <a href="https://titangp1.github.io/Guardia_Rev/"><img src="https://img.shields.io/badge/Ouvrir_le_site-1d6fd1?style=flat-square&logo=githubpages&logoColor=white" alt="Ouvrir le site"></a>
-<img src="https://img.shields.io/badge/version-2.0.0-1f2937?style=flat-square" alt="Version 2.0.0">
+<img src="https://img.shields.io/badge/version-2.1.0-1f2937?style=flat-square" alt="Version 2.0.0">
 <img src="https://img.shields.io/badge/acc%C3%A8s-%40guardiaschool.fr-a77d2f?style=flat-square" alt="Accès @guardiaschool.fr">
 </p>
 
@@ -44,6 +44,8 @@ Les questions et exercices tirés des anciens sujets sont marqués « Partiel 20
 | **Partiel blanc** | Matières au choix, chrono, correction et score par matière à la fin, historique |
 | **Lexique** | Toutes les notions des cartes, filtrables |
 | **Recherche** | <kbd>Ctrl</kbd> + <kbd>K</kbd> ou <kbd>/</kbd> : cours, cartes, questions, exercices |
+| **Mobile** | Barre de navigation en bas (Accueil, Réviser, Partiel, Entraîner, Matières), cibles tactiles de 44 px |
+| **Accessibilité** | Contrastes AA vérifiés, lien « Aller au contenu », focus visible, corrections qui ne reposent pas sur la couleur seule, mouvement réduit respecté |
 | **Clavier** | <kbd>A</kbd>–<kbd>D</kbd> répondre, <kbd>Entrée</kbd> valider, <kbd>Espace</kbd> retourner une carte, <kbd>1</kbd>/<kbd>2</kbd> noter une carte |
 
 ## Lancer en local
@@ -61,6 +63,7 @@ puis ouvrir <http://localhost:8000>. Pour tester sans compte Firebase : <http://
 3. *Authentication → Modèles → Validation de l'adresse e-mail* : coller `firebase/email-verification.html` (objet : « Valide ton compte Guardia_Rev »).
 4. *Firestore → Règles* : coller `firebase/firestore.rules`, puis **Publier**.
 5. L'objet `firebaseConfig` est dans `assets/config.js`.
+6. Adresses interdites : leurs empreintes SHA-256 (email en minuscules) sont dans `blocked` de `assets/config.js` **et** dans `banned()` de `firebase/firestore.rules` ; garder les deux listes identiques.
 
 **Sécurité.** La configuration Web de Firebase est publique par conception : la protection vient des règles. Firestore n'accepte que les comptes dont l'email se termine par `@guardiaschool.fr` **et** est vérifié, et chacun ne lit et n'écrit que sa propre progression.
 
@@ -85,4 +88,4 @@ Pour ajouter du contenu : éditer le fichier de la matière dans `assets/data/`.
 
 Icônes [Lucide](https://lucide.dev) (licence ISC). Polices Bricolage Grotesque, Figtree et JetBrains Mono (Google Fonts).
 
-<div align="center"><sub>Guardia_Rev · v2.0.0 · Titan_gp1</sub></div>
+<div align="center"><sub>Guardia_Rev · v2.1.0 · Titan_gp1</sub></div>

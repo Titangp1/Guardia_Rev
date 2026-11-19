@@ -2,7 +2,7 @@
    révisions du jour, entraînements interactifs, lexique, recherche et partiel blanc. Réalisé par Titan_gp1. */
 (function(){
 'use strict';
-const VERSION='2.0.0';
+const VERSION='2.1.0';
 const CFG=window.GR_CONFIG||{};
 const DOMAIN=(CFG.domain||'guardiaschool.fr').toLowerCase();
 const META={isr:['server','#1d6fd1'],supervision:['activity','#a77d2f'],fondamentaux:['lock','#0f766e'],devsecops:['terminal','#15803d'],web:['code','#ea580c'],incident:['alert','#7c3aed'],anglais:['languages','#db2777']};
@@ -20,6 +20,11 @@ const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const subj=id=>SUBJECTS.find(s=>s.id===id);
 const emailOk=e=>new RegExp('^[^\\s@]+@'+DOMAIN.replace(/\./g,'\\.')+'$','i').test(String(e||'').trim());
+/* Adresses bannies : on compare l'empreinte SHA-256 de l'email (en minuscules) à la liste de config.js. */
+const BLOCKED=new Set((CFG.blocked||[]).map(h=>String(h).toLowerCase()));
+async function isBlocked(e){if(!BLOCKED.size)return false;try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(String(e||'').trim().toLowerCase()));
+  return BLOCKED.has([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''))}catch(_){return false}}
+const BLOCKED_MSG='Inscription et connexion impossibles avec cette adresse.';
 const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const fold=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const _tmp=document.createElement('div');
@@ -68,7 +73,8 @@ const IC={
   network:'<rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/>',
   plug:'<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>',
   list:'<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/>',
-  google:''
+  eye:'<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff:'<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>'
 };
 const ic=(n,c='')=>`<svg class="ico ${c}" viewBox="0 0 24 24" aria-hidden="true">${IC[n]||''}</svg>`;
 const GLOGO='<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
@@ -176,6 +182,7 @@ async function boot(){
   catch(e){console.error(e);root.innerHTML=`<div class="auth"><div class="card auth-card"><h1>Guardia_Rev</h1><div class="msg err">Le service de connexion ne répond pas. Vérifiez votre connexion et rechargez la page.</div></div></div>`;return}
   S.api.onAuth(async u=>{
     if(u&&!emailOk(u.email)){await S.api.signOut();S.authMsg={k:'err',t:'Seules les adresses @'+DOMAIN+' sont acceptées.'};return}
+    if(u&&await isBlocked(u.email)){await S.api.signOut();S.authMsg={k:'err',t:BLOCKED_MSG};return}
     S.user=u;S.data={progress:{}};
     if(u&&u.verified){try{S.data=(await S.api.load(u.id))||{progress:{}}}catch(e){console.error(e);toast('Impossible de charger votre progression.')}}
     S.ready=true;render();
@@ -207,7 +214,7 @@ function renderAuth(){
     <form id="authForm" class="grid" novalidate>
       ${v==='signup'?`<div class="field"><label for="pseudo">Prénom affiché</label><input class="input" id="pseudo" autocomplete="given-name" required maxlength="24" placeholder="Prénom"></div>`:''}
       <div class="field"><label for="email">Email école</label><input class="input" id="email" type="email" autocomplete="email" required placeholder="prenom.nom@${esc(DOMAIN)}"></div>
-      ${v!=='reset'?`<div class="field"><label for="pw">Mot de passe</label><input class="input" id="pw" type="password" autocomplete="${v==='signup'?'new-password':'current-password'}" required minlength="8">${v==='signup'?'<span class="hint2">8 caractères minimum.</span>':''}</div>`:''}
+      ${v!=='reset'?`<div class="field"><label for="pw">Mot de passe</label><div class="pw"><input class="input" id="pw" type="password" autocomplete="${v==='signup'?'new-password':'current-password'}" required minlength="8"><button type="button" id="pwT" aria-label="Afficher le mot de passe" aria-pressed="false">${ic('eye')}</button></div>${v==='signup'?'<span class="hint2">8 caractères minimum.</span>':''}</div>`:''}
       <button class="btn primary lg" type="submit" id="go">${v==='signup'?'Créer mon compte':v==='reset'?'Envoyer le lien':'Se connecter'}</button>
     </form>
     ${v!=='reset'&&S.api.google?`<div class="or">ou</div><button class="btn lg" type="button" id="gBtn">${GLOGO}Continuer avec Google (compte école)</button>`:''}
@@ -219,12 +226,13 @@ function renderAuth(){
   $('#themeA').onclick=()=>{toggleTheme();renderAuth()};
   const g=$('#gBtn');if(g)g.onclick=async()=>{g.disabled=true;S.authMsg=null;try{await S.api.google()}catch(err){if(err.code!=='auth/popup-closed-by-user'&&err.code!=='auth/cancelled-popup-request')showMsg('err',fr(err).message);g.disabled=false}};
   const em=$('#email');em.addEventListener('blur',()=>{if(em.value&&!emailOk(em.value))showMsg('err','Seules les adresses @'+DOMAIN+' sont acceptées.')});
-  $('#authForm').onsubmit=async e=>{e.preventDefault();const go=$('#go');go.disabled=true;
+  const pt=$('#pwT');if(pt)pt.onclick=()=>{const i=$('#pw'),show=i.type==='password';i.type=show?'text':'password';pt.setAttribute('aria-pressed',String(show));pt.setAttribute('aria-label',show?'Masquer le mot de passe':'Afficher le mot de passe');pt.innerHTML=ic(show?'eyeOff':'eye');i.focus()};
+  $('#authForm').onsubmit=async e=>{e.preventDefault();const go=$('#go'),lbl=go.textContent;go.disabled=true;go.textContent=v==='signup'?'Création du compte…':v==='reset'?'Envoi…':'Connexion…';
     try{
-      if(v==='signup'){const c=checkSignup(em.value,$('#pw').value,$('#pseudo').value);S.authMsg=null;await S.api.signUp(c.email,$('#pw').value,c.pseudo)}
+      if(v==='signup'){const c=checkSignup(em.value,$('#pw').value,$('#pseudo').value);if(await isBlocked(c.email))throw new Error(BLOCKED_MSG);S.authMsg=null;await S.api.signUp(c.email,$('#pw').value,c.pseudo)}
       else if(v==='reset'){if(!emailOk(em.value))throw new Error('Indiquez votre adresse @'+DOMAIN+'.');await S.api.reset(em.value.trim().toLowerCase());S.authView='login';S.authMsg={k:'ok',t:'Si ce compte existe, un lien de réinitialisation vient d\'être envoyé.'};renderAuth()}
-      else{if(!emailOk(em.value))throw new Error('Seules les adresses @'+DOMAIN+' sont acceptées.');S.authMsg=null;await S.api.signIn(em.value.trim().toLowerCase(),$('#pw').value)}
-    }catch(err){showMsg('err',(err.code?fr(err):err).message);go.disabled=false}};
+      else{if(!emailOk(em.value))throw new Error('Seules les adresses @'+DOMAIN+' sont acceptées.');if(await isBlocked(em.value))throw new Error(BLOCKED_MSG);S.authMsg=null;await S.api.signIn(em.value.trim().toLowerCase(),$('#pw').value)}
+    }catch(err){showMsg('err',(err.code?fr(err):err).message);go.disabled=false;go.textContent=lbl}};
 }
 
 /* ================= Mise en page ================= */
@@ -236,7 +244,8 @@ function layout(inner,r){
   const due=totalDue(),wrong=totalWrong(),name=S.user.name||S.user.email.split('@')[0];
   const nav=PAGES.map(([p,i,l])=>`<a href="#/${p}" ${r.page===p?'aria-current="page"':''}>${ic(i)}<span>${l}</span>${p==='revisions'&&(due+wrong)?`<span class="count">${due+wrong}</span>`:''}</a>`).join('');
   const subs=SUBJECTS.map(s=>`<a href="#/m/${s.id}" ${r.page==='m'&&r.id===s.id?'aria-current="page"':''}><span class="dot" style="background:${s.col}"></span><span>${esc(s.name)}</span><span class="pct">${stats(s).pct}%</span></a>`).join('');
-  return `<div class="app ${S.menu?'open':''}" id="app">
+  const bn=[['','home','Accueil'],['revisions','clock','Réviser'],['partiel','grad','Partiel'],['entrainements','zap','Entraîner']];
+  return `<a class="skip" href="#main" id="skip">Aller au contenu</a><div class="app ${S.menu?'open':''}" id="app">
     <header class="mtop"><button class="btn ghost icon" id="menuBtn" aria-label="Menu">${ic('menu')}</button><a class="brand" href="#/"><span class="brand-mark">${LOGO}</span><b>Guardia_Rev</b></a><button class="btn ghost icon" data-search aria-label="Rechercher">${ic('search')}</button></header>
     <aside class="side" aria-label="Navigation">
       <a class="brand" href="#/"><span class="brand-mark">${LOGO}</span><span><b>Guardia_Rev</b><small>Révisions · GCS1</small></span></a>
@@ -248,7 +257,8 @@ function layout(inner,r){
         <button class="btn ghost icon" id="themeB" aria-label="Changer de thème" title="Changer de thème">${ic(isDark()?'sun':'moon')}</button></div>
     </aside>
     ${S.menu?'<div class="scrim" id="scrim"></div>':''}
-    <main class="main ${S.fadeOn?'fade':''}" id="main">${inner}<footer class="credit">Guardia_Rev v${VERSION} · Réalisé par <b>Titan_gp1</b> · ${S.api.mode==='local'?'mode local':'progression synchronisée'}</footer></main>
+    <nav class="bnav" aria-label="Navigation principale">${bn.map(([p,i,l])=>`<a href="#/${p}" ${r.page===p?'aria-current="page"':''}>${ic(i)}<span>${l}</span>${p==='revisions'&&(due+wrong)?`<span class="count" aria-label="${due+wrong} à revoir">${due+wrong}</span>`:''}</a>`).join('')}<button type="button" id="bMenu" aria-label="Ouvrir le menu des matières">${ic('menu')}<span>Matières</span></button></nav>
+    <main class="main ${S.fadeOn?'fade':''}" id="main" tabindex="-1">${inner}<footer class="credit">Guardia_Rev v${VERSION} · Réalisé par <b>Titan_gp1</b> · ${S.api.mode==='local'?'mode local':'progression synchronisée'}</footer></main>
   </div>`;
 }
 const AFTER=[];
@@ -267,7 +277,9 @@ function render(){
   }catch(e){console.error(e);html=notFound()}
   root.innerHTML=layout(html,r);
   $('#themeB').onclick=()=>{toggleTheme();render()};
-  $('#menuBtn').onclick=()=>{S.menu=!S.menu;$('#app').classList.toggle('open',S.menu);render()};
+  $('#menuBtn').onclick=$('#bMenu').onclick=()=>{S.menu=!S.menu;render();if(S.menu){const a=$('.side .nav a');if(a)a.focus()}};
+  $('#skip').onclick=e=>{e.preventDefault();$('#main').focus()};
+  if(S.fadeOn&&S.rendered&&!S.menu)$('#main').focus({preventScroll:true});S.rendered=true;
   const sc=$('#scrim');if(sc)sc.onclick=()=>{S.menu=false;render()};
   $$('[data-search]').forEach(b=>b.onclick=openPalette);
   AFTER.splice(0).forEach(f=>f());
@@ -279,6 +291,7 @@ function onKey(e){
   if(pal){paletteKey(e);return}
   const t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable))return;
   if(e.key==='/'&&S.user&&S.user.verified){e.preventDefault();openPalette();return}
+  if(e.key==='Escape'&&S.menu){S.menu=false;render();return}
   if(S.onKey&&!e.ctrlKey&&!e.metaKey&&!e.altKey)S.onKey(e);
 }
 
@@ -299,7 +312,7 @@ function pageHome(){
   todo.push(['#/partiel','grad','Partiel blanc chronométré','Questions mélangées de toutes les matières']);
   return `
   <section class="head">
-    <div><p class="eyebrow">Premiers partiels · GCS1</p><h1>Bonjour ${esc(S.user.name||'')} 👋</h1>
+    <div><h1>Bonjour ${esc(S.user.name||'')}</h1>
     <p class="lede">${left!=null&&left>=0?`Plus que <b>${plural(left,'jour')}</b> avant les partiels.`:'Cours, QCM corrigés, cartes et exercices construits à partir de nos cours et des anciens sujets.'}</p></div>
     <div class="row">${exam?'':'<a class="btn" href="#/compte">'+ic('calendar','sm')+'Date des partiels</a>'}<a class="btn primary" href="#/revisions">${ic('clock','sm')}Réviser maintenant</a></div>
   </section>
@@ -351,7 +364,7 @@ function ficheView(s,extra){
   return `<div class="fiche">
     <nav class="card toc no-print" aria-label="Sommaire"><div class="small muted" style="padding:4px 8px 6px;font-weight:600">${p.read.length}/${s.fiche.length} sections lues</div>
       ${s.fiche.map((f,i)=>`<a href="#" data-t="${s.id}-f${i}" class="${p.read.includes(i)?'read':''}"><span class="tick">${p.read.includes(i)?ic('check','sm'):''}</span>${esc(f.t)}</a>`).join('')}</nav>
-    <div>${s.fiche.map((f,i)=>`<article class="card pad sec" id="${s.id}-f${i}"><h2>${i+1}. ${esc(f.t)}</h2>${f.h}
+    <div>${s.fiche.map((f,i)=>`<article class="card pad sec" id="${s.id}-f${i}"><h2><span class="num" aria-hidden="true">${pad2(i+1)}</span>${esc(f.t)}</h2>${f.h}
       <div class="sec-foot"><button class="btn sm ${p.read.includes(i)?'':'primary'}" data-read="${i}">${p.read.includes(i)?ic('check','sm')+'Lu':'Marquer comme lu'}</button></div></article>`).join('')}
     <div class="card pad row spread no-print" style="margin-top:14px"><span>Fiche lue ? Passez à la pratique.</span><span class="row"><a class="btn" href="#/m/${s.id}/cartes">${ic('layers','sm')}Cartes</a><a class="btn primary" href="#/m/${s.id}/qcm">${ic('circleCheck','sm')}Faire le QCM</a></span></div></div>
   </div>`;
@@ -384,7 +397,7 @@ function quizBody(){
     ${q.code?`<pre><code>${esc(q.code)}</code></pre>`:''}
     ${multi?`<div class="hint">Plusieurs réponses possibles : cochez toutes les bonnes puis validez.</div>`:''}
     <div class="opts">${q.order.map((oi,k)=>{const cls=ans?(q.a.includes(oi)?'good':(ans.picked.includes(oi)?'wrong':'')):(z.picked.has(oi)?'sel':'');
-      return `<button class="opt ${cls}" data-o="${oi}" ${ans?'disabled':''}><span class="l">${'ABCDEF'[k]}</span><span>${esc(q.o[oi])}</span></button>`}).join('')}</div>
+      return `<button class="opt ${cls}" data-o="${oi}" ${ans?'disabled':''}><span class="l">${'ABCDEF'[k]}</span><span>${esc(q.o[oi])}</span>${ans&&q.a.includes(oi)?ic('check','mark')+'<span class="sr">(bonne réponse)</span>':ans&&ans.picked.includes(oi)?ic('x','mark')+'<span class="sr">(votre réponse, fausse)</span>':''}</button>`}).join('')}</div>
     ${ans?`<div class="expl ${ans.ok?'ok':'bad'}"><b>${ans.ok?'Bonne réponse.':'Pas tout à fait.'}</b> ${q.e||''}</div>
       <div class="row" style="justify-content:flex-end"><span class="muted small">Entrée ↵</span><button class="btn primary" id="qNext">${z.i+1<z.list.length?'Question suivante':'Voir le résultat'}${ic('arrow','sm')}</button></div>`
       :(multi?`<div class="row" style="justify-content:flex-end"><button class="btn primary" id="qValid" ${z.picked.size?'':'disabled'}>Valider</button></div>`:'')}
@@ -407,7 +420,7 @@ function answer(){const z=QZ,q=z.list[z.i],picked=[...z.picked];const ok=picked.
 function nextQ(){const z=QZ;z.i++;z.picked=new Set();if(z.i>=z.list.length)finishQuiz();render();window.scrollTo(0,0)}
 let TT=null;
 function tickTimer(){clearInterval(TT);if(!QZ||!QZ.timer)return;const upd=()=>{if(!QZ||QZ.done){clearInterval(TT);return}
-  const left=Math.max(0,QZ.timer*60-Math.floor((Date.now()-QZ.t0)/1000));const e=$('#qTimer');if(e)e.textContent=`⏱ ${Math.floor(left/60)}:${pad2(left%60)}`;
+  const left=Math.max(0,QZ.timer*60-Math.floor((Date.now()-QZ.t0)/1000));const e=$('#qTimer');if(e)e.innerHTML=`${ic('clock','sm')} ${Math.floor(left/60)}:${pad2(left%60)}`;
   if(left<=0){clearInterval(TT);finishQuiz();render();toast('Temps écoulé !')}};upd();TT=setInterval(upd,1000)}
 function finishQuiz(){const z=QZ;if(z.done)return;z.done=true;clearInterval(TT);
   const good=z.answers.filter(a=>a&&a.ok).length,pct=Math.round(100*good/z.list.length);z.score={good,pct};
@@ -486,7 +499,7 @@ function exosView(s){
     $$('textarea[data-draft]').forEach(t=>{const k='gr-draft-'+S.user.id+'-'+t.dataset.draft;t.value=store.get(k,'');t.oninput=()=>store.set(k,t.value)})});
   return `<section class="card pad-sm tip" style="margin:0">${ic('pencil','sm')} Rédigez votre réponse dans le cadre (elle reste dans ce navigateur), <b>puis</b> ouvrez le corrigé. Les exercices <span class="badge gold">ancien partiel</span> reprennent les sujets des années précédentes.</section>
   ${s.exos.map((x,i)=>`<section class="card pad exo">
-    <div class="row spread"><h3>${i+1}. ${esc(x.t)}</h3><span class="row">${x.src?`<span class="badge gold">${esc(x.src)}</span>`:''}${x.pts?`<span class="badge">${esc(x.pts)}</span>`:''}${p.exos.includes(i)?'<span class="badge ok">Maîtrisé</span>':''}</span></div>
+    <div class="row spread"><h3><span class="num" aria-hidden="true">${pad2(i+1)}</span>${esc(x.t)}</h3><span class="row">${x.src?`<span class="badge gold">${esc(x.src)}</span>`:''}${x.pts?`<span class="badge">${esc(x.pts)}</span>`:''}${p.exos.includes(i)?'<span class="badge ok">Maîtrisé</span>':''}</span></div>
     <div>${x.q}</div>
     <textarea data-draft="${s.id}-${i}" placeholder="Votre réponse…" aria-label="Votre réponse"></textarea>
     <details><summary>Voir le corrigé</summary><div class="sec">${x.r}</div></details>
@@ -503,7 +516,7 @@ function pageRevisions(){
   AFTER.push(()=>{$('#rCards').onclick=()=>{const ids=SUBJECTS.map(s=>s.id);FC={key:'_all',multi:true,sids:ids,items:buildDeck(ids,false),i:0,flip:false,done:0,again:0};render()};
     const w=$('#rWrong');if(w)w.onclick=()=>{startQuiz(shuffle(wrongQs).slice(0,30),{ctx:'errors',title:'Mes erreurs',retry:true});render()};
     $('#rExpress').onclick=()=>{startQuiz(shuffle(SUBJECTS.flatMap(s=>s.quiz)).slice(0,10),{ctx:'errors',title:'QCM express'});render()}});
-  return `<section class="head"><div><p class="eyebrow">Chaque jour</p><h1>Révisions du jour</h1><p class="lede">Un quart d'heure par jour vaut mieux qu'une nuit blanche la veille : les cartes et les erreurs reviennent quand il faut.</p></div></section>
+  return `<section class="head"><div><h1>Révisions du jour</h1><p class="lede">Un quart d'heure par jour vaut mieux qu'une nuit blanche la veille : les cartes et les erreurs reviennent quand il faut.</p></div></section>
   <section class="grid g3">
     <div class="card pad grid"><div class="row">${ic('layers')}<h3>Cartes à revoir</h3></div><b style="font-family:var(--f-display);font-size:34px">${due}</b>
       <p class="muted small">${due?'Cartes dont la date de révision est arrivée, toutes matières.':'Rien d\'échu. '+(nw?nw+' nouvelles cartes à découvrir.':'')}</p>
@@ -527,7 +540,7 @@ function pagePartiel(){
     $('#pbN').onchange=e=>PB.n=+e.target.value;$('#pbT').onchange=e=>PB.timer=+e.target.value;
     $('#pbGo').onclick=()=>{const pool=SUBJECTS.filter(s=>PB.sel.has(s.id)).flatMap(s=>s.quiz);
       startQuiz(shuffle(pool).slice(0,PB.n),{ctx:'partiel',title:'Partiel blanc · '+Math.min(PB.n,pool.length)+' questions',timer:PB.timer});render()}});
-  return `<section class="head"><div><p class="eyebrow">Conditions d'examen</p><h1>Partiel blanc</h1><p class="lede">Questions tirées au hasard, chrono, et <b>aucune correction avant la fin</b> : comme le jour J.</p></div></section>
+  return `<section class="head"><div><h1>Partiel blanc</h1><p class="lede">Questions tirées au hasard, chrono, et <b>aucune correction avant la fin</b> : comme le jour J.</p></div></section>
   <section class="card pad grid">
     <h3>Matières</h3>
     <div class="grid g3">${SUBJECTS.map(s=>`<label class="check"><input type="checkbox" data-ps="${s.id}" ${PB.sel.has(s.id)?'checked':''}><span class="dot" style="width:8px;height:8px;border-radius:3px;background:${s.col}"></span><span>${esc(s.name)} <span class="muted small">(${s.quiz.length})</span></span></label>`).join('')}</div>
@@ -548,7 +561,7 @@ function pageDrills(id){
     ['osi','layers','Modèle OSI','Remettre les couches dans l\'ordre et placer chaque protocole.'],
     ['commandes','terminal','Commandes','Linux, Git, Windows, Docker, Squid : la bonne commande pour chaque tâche.']];
   const dr=glob('_drills',{});
-  const head=`<section class="head"><div><p class="eyebrow">Pratique</p><h1>Entraînements</h1><p class="lede">Des exercices générés à l'infini sur ce qui tombe à coup sûr : calculs d'adressage, ports, couches OSI et commandes.</p></div></section>
+  const head=`<section class="head"><div><h1>Entraînements</h1><p class="lede">Des exercices générés à l'infini sur ce qui tombe à coup sûr : calculs d'adressage, ports, couches OSI et commandes.</p></div></section>
   <nav class="tabs">${list.map(([k,i,l])=>`<a href="#/entrainements/${k}" ${id===k?'aria-current="page"':''}>${ic(i,'sm')}${l}</a>`).join('')}</nav>`;
   if(id==='sousreseaux')return head+drillSubnet();
   if(id==='ports')return head+drillPorts();
@@ -567,8 +580,8 @@ function genSubnet(){const r=pick(['10','172','192','192','192']);let ip,cidr;
 function drillSubnet(){
   if(!D.sub)D.sub={q:genSubnet(),checked:false,vals:{}};const z=D.sub,F=[['mask','Masque décimal'],['net','Adresse réseau'],['bc','Broadcast'],['first','Première adresse utilisable'],['last','Dernière adresse utilisable'],['hosts','Nombre d\'hôtes']];
   AFTER.push(()=>{const go=()=>{F.forEach(([k])=>z.vals[k]=$('#s-'+k).value.trim());z.checked=true;const ok=F.every(([k])=>z.vals[k]===z.q.ans[k]);drillSave('sousreseaux',ok);render()};
-    $('#sCheck').onclick=go;$('#sNew').onclick=()=>{D.sub=null;render();setTimeout(()=>$('#s-mask')&&$('#s-mask').focus(),0)};
-    $('#sShow').onclick=()=>{F.forEach(([k])=>z.vals[k]=z.q.ans[k]);z.checked=true;z.shown=true;render()};
+    const sc=$('#sCheck');if(sc)sc.onclick=go;$('#sNew').onclick=()=>{D.sub=null;render();setTimeout(()=>$('#s-mask')&&$('#s-mask').focus(),0)};
+    const ss=$('#sShow');if(ss)ss.onclick=()=>{F.forEach(([k])=>z.vals[k]=z.q.ans[k]);z.checked=true;z.shown=true;render()};
     $$('.drill .input').forEach(i=>i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();z.checked?$('#sNew').click():go()}});
     if(!z.checked)setTimeout(()=>{const f=$('#s-mask');if(f&&document.activeElement===document.body)f.focus()},0)});
   const all=z.checked&&F.every(([k])=>z.vals[k]===z.q.ans[k]);
@@ -671,12 +684,13 @@ function drillCmd(){
 /* ================= Lexique ================= */
 function pageLexique(filter){
   const sid=SUBJECTS.some(s=>s.id===filter)?filter:'';let q=sid?'':(filter||'');
-  AFTER.push(()=>{const inp=$('#lxQ');const apply=()=>{const f=fold(inp.value);let n=0;$$('.lx').forEach(el=>{const show=(!f||el.dataset.t.includes(f));el.hidden=!show;if(show)n++});$('#lxN').textContent=n};
+  AFTER.push(()=>{const inp=$('#lxQ');const apply=()=>{const f=fold(inp.value);let n=0;$$('.lx').forEach(el=>{const show=(!f||el.dataset.t.includes(f));el.hidden=!show;if(show)n++});$('#lxN').textContent=n;const em=$('#lxEmpty');em.hidden=n>0;em.querySelector('b').textContent=inp.value};
     inp.oninput=apply;apply();if(!sid)inp.focus()});
   const subs=sid?[subj(sid)]:SUBJECTS;
-  return `<section class="head"><div><p class="eyebrow">Référence</p><h1>Lexique</h1><p class="lede">Toutes les notions des cartes, avec leur réponse. Pratique pour une relecture rapide.</p></div></section>
+  return `<section class="head"><div><h1>Lexique</h1><p class="lede">Toutes les notions des cartes, avec leur réponse. Pratique pour une relecture rapide.</p></div></section>
   <section class="card pad grid">
-    <div class="row"><input class="input" id="lxQ" placeholder="Filtrer : port, VLAN, git push…" value="${esc(q)}" style="flex:1;min-width:200px"><span class="badge"><span id="lxN">0</span> notions</span></div>
+    <div class="row"><input class="input" id="lxQ" placeholder="Filtrer : port, VLAN, git push…" value="${esc(q)}" style="flex:1;min-width:200px"><span class="badge" role="status"><span id="lxN">0</span> notions</span></div>
+    <p class="empty" id="lxEmpty" hidden>Aucune notion ne contient « <b></b> ». Essayez un mot plus court, ou la recherche complète (<kbd>Ctrl</kbd> <kbd>K</kbd>).</p>
     <div class="row"><a class="badge ${sid?'':'blue'}" href="#/lexique" style="text-decoration:none">Toutes</a>${SUBJECTS.map(s=>`<a class="badge ${sid===s.id?'blue':''}" href="#/lexique/${s.id}" style="text-decoration:none">${esc(s.name)}</a>`).join('')}</div>
   </section>
   ${subs.map(s=>`<section class="card"><div class="pad-sm row" style="border-bottom:1px solid var(--border)">${subjIco(s,28)}<h3>${esc(s.name)}</h3></div>
@@ -720,7 +734,7 @@ function pageAccount(){
     $('#aReset').onclick=()=>{if(confirm('Effacer toute votre progression (QCM, cartes, exercices, série) ? Cette action est définitive.')){S.data.progress={};saveSoon();FC=null;QZ=null;toast('Progression effacée.');render()}};
     const pw=$('#aPw');if(pw)pw.onclick=async()=>{try{await S.api.reset(S.user.email);toast('Lien envoyé à '+S.user.email)}catch(e){toast(fr(e).message)}};
     $('#aDel').onclick=async()=>{if(!confirm('Supprimer définitivement votre compte et votre progression ?'))return;try{await S.api.remove(S.user.id);toast('Compte supprimé.')}catch(e){toast(e.code==='auth/requires-recent-login'?'Par sécurité, déconnectez-vous puis reconnectez-vous avant de supprimer le compte.':fr(e).message)}}});
-  return `<section class="head"><div><p class="eyebrow">Mon compte</p><h1>${esc(S.user.name||'Mon compte')}</h1><p class="muted" style="margin-top:4px">${esc(S.user.email)} · ${S.api.mode==='local'?'progression dans ce navigateur (mode local)':'progression synchronisée sur tous vos appareils'}</p></div>
+  return `<section class="head"><div><h1>${esc(S.user.name||'Mon compte')}</h1><p class="muted" style="margin-top:4px">${esc(S.user.email)} · ${S.api.mode==='local'?'progression dans ce navigateur (mode local)':'progression synchronisée sur tous vos appareils'}</p></div>
     <button class="btn" id="aOut">${ic('logout','sm')}Se déconnecter</button></section>
   <section class="grid g2">
     <div class="card pad grid"><h3>${ic('calendar','sm')} Date des partiels</h3><p class="muted small">Affiche un compte à rebours sur le tableau de bord.</p><input class="input" type="date" id="aDate" value="${esc(set.examDate||'')}" style="max-width:220px"></div>

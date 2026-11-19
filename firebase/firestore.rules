@@ -8,6 +8,7 @@ rules_version = '2';
 // Ce que ces règles garantissent :
 //   * il faut être connecté avec une adresse @guardiaschool.fr DONT L'EMAIL EST VÉRIFIÉ
 //     (le lien de confirmation prouve que la personne possède vraiment la boîte école) ;
+//   * les adresses bannies n'ont accès à rien ;
 //   * chacun ne lit, n'écrit et ne supprime que son propre document ;
 //   * aucun autre chemin de la base n'est accessible.
 
@@ -17,7 +18,16 @@ service cloud.firestore {
     function guardia() {
       return request.auth != null
         && request.auth.token.email_verified == true
-        && request.auth.token.email.lower().matches('^[^@]+@guardiaschool[.]fr$');
+        && request.auth.token.email.lower().matches('^[^@]+@guardiaschool[.]fr$')
+        && !banned();
+    }
+    // Adresses bannies : empreintes SHA-256 de l'email en minuscules (alignées sur assets/config.js).
+    function banned() {
+      return hashing.sha256(request.auth.token.email.lower()).toHexString().lower() in [
+        '50fdb7e7463cbc703e96a7e378002137ef56c3effa71e6e6bf295942cc03f6dc',
+        '584f24b53e94295bc618fd1941b653bf45866923f5e81357abf194e8668bb1ed',
+        'd0f8637156ca71f4d8bb4d4b6582ab58234d2997feceae4843a452f815f5b5b4'
+      ];
     }
     function owner(uid) {
       return guardia() && request.auth.uid == uid;
