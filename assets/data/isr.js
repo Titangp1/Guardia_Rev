@@ -37,6 +37,27 @@ fiche:[
 <div class="trap"><b>Piège</b> : <code>172.35.20.1</code> n'est <b>pas</b> privée (la plage s'arrête à 172.31). <code>8.8.8.8</code> est publique (DNS de Google).</div>
 <p>Autres plages à connaître : <code>127.0.0.0/8</code> boucle locale (localhost), <code>169.254.0.0/16</code> APIPA / lien local (le poste n'a pas eu de réponse DHCP), <code>100.64.0.0/10</code> CGNAT.</p>
 <p><b>NAT</b> : le pare-feu/routeur traduit les adresses privées en une adresse publique pour sortir sur Internet. La <b>passerelle</b> (gateway) est le routeur par lequel un poste sort de son réseau.</p>`},
+{t:'Découper un réseau en sous-réseaux', h:`
+<p>Le calcul tombe presque à chaque partiel. Méthode rapide, sans binaire :</p>
+<ol><li><b>Repérer l'octet « coupé »</b> par le masque : /8 → 1<sup>er</sup> octet, /9 à /16 → 2<sup>e</sup>, /17 à /24 → 3<sup>e</sup>, /25 à /32 → 4<sup>e</sup>.</li>
+<li><b>Valeur du masque dans cet octet</b> : 128, 192, 224, 240, 248, 252, 254, 255 pour 1 à 8 bits à 1.</li>
+<li><b>Le pas</b> (taille du bloc) = 256 − cette valeur.</li>
+<li><b>Adresse réseau</b> = le plus grand multiple du pas inférieur ou égal à l'octet de l'IP (les octets suivants à 0).</li>
+<li><b>Broadcast</b> = réseau + pas − 1 (les octets suivants à 255) ; première = réseau + 1 ; dernière = broadcast − 1.</li></ol>
+<div class="tip"><b>Exemple</b> : <code>192.168.10.77/27</code> → 4<sup>e</sup> octet coupé, masque 255.255.255.<b>224</b>, pas = 32. Multiples : 0, 32, <b>64</b>, 96… 77 est entre 64 et 95. Réseau <b>192.168.10.64</b>, broadcast <b>.95</b>, plage <b>.65 → .94</b>, 30 hôtes.</div>
+<div class="tip"><b>Exemple 2</b> : <code>172.20.150.9/20</code> → 3<sup>e</sup> octet coupé, masque 255.255.<b>240</b>.0, pas = 16. 150 est entre 144 et 159. Réseau <b>172.20.144.0</b>, broadcast <b>172.20.159.255</b>, plage 172.20.144.1 → 172.20.159.254, 4 094 hôtes.</div>
+<h3>Découper un /24 en plusieurs zones</h3>
+<p>Pour obtenir N sous-réseaux, on emprunte n bits tels que 2<sup>n</sup> ≥ N. Un /24 découpé en 4 → /26 (4 blocs de 64) : .0/26, .64/26, .128/26, .192/26. Pour un nombre d'hôtes H, on choisit le plus petit bloc tel que bloc − 2 ≥ H (50 postes → bloc de 64 → /26). Le <b>VLSM</b> consiste à donner des tailles différentes selon les besoins (un /30 suffit pour relier deux routeurs).</p>`},
+{t:'ARP, ICMP, routage et NAT', h:`
+<h3>ARP : de l'IP à l'adresse MAC</h3>
+<p>Sur un réseau local, une trame est envoyée à une <b>adresse MAC</b>. <b>ARP</b> demande en broadcast « qui a l'IP 192.168.20.254 ? » et la machine concernée répond avec sa MAC. Le résultat est gardé en cache (<code>arp -a</code>). Pour sortir du réseau, le poste envoie la trame à la MAC de sa <b>passerelle</b>. Attaque : <b>ARP spoofing</b> (répondre à la place de la passerelle pour intercepter le trafic : man-in-the-middle).</p>
+<h3>ICMP</h3>
+<p>Protocole de messages de contrôle de la couche 3 : <code>ping</code> (echo request / echo reply), <code>tracert</code> / <code>traceroute</code> (liste des routeurs traversés), « destination injoignable ». Beaucoup de pare-feux bloquent le ping entrant : « pas de ping » ne veut pas dire « machine éteinte ».</p>
+<h3>Routage</h3>
+<p>Chaque routeur (ici OPNsense) consulte sa <b>table de routage</b> : réseaux directement connectés (une interface par zone), routes statiques, et la <b>route par défaut</b> (0.0.0.0/0) vers Internet. Un poste n'a besoin que de sa passerelle par défaut.</p>
+<h3>NAT</h3>
+<ul><li><b>NAT source / PAT (masquerade)</b> : les adresses privées sortent sur Internet avec l'adresse publique du pare-feu ; les ports distinguent les connexions. C'est ce qui permet à tout le LAN de naviguer avec une seule IP publique.</li>
+<li><b>NAT destination / redirection de port (port forwarding)</b> : le pare-feu redirige un port de son IP publique (ex. 443) vers un serveur interne de la DMZ (ex. le reverse proxy). C'est ainsi qu'on publie un service.</li></ul>`},
 {t:'Matériel réseau et VLAN', h:`
 <ul><li><b>Switch</b> (couche 2) : relie les machines d'un même réseau local grâce aux adresses MAC.</li>
 <li><b>Routeur</b> (couche 3) : relie des réseaux différents et choisit le chemin des paquets.</li>
@@ -82,6 +103,19 @@ fiche:[
 <ul><li><b>Type 1 (bare-metal)</b> : installé directement sur le matériel : Proxmox VE, VMware ESXi, Hyper-V.</li>
 <li><b>Type 2 (hébergé)</b> : s'installe sur un système existant : VirtualBox, VMware Workstation.</li></ul>
 <p>Avantages : économies de matériel, <b>snapshots</b> (retour arrière avant une modification), isolation, déploiement rapide. Nos projets tournaient sur Proxmox, avec des snapshots « avant_soutenance ».</p>`},
+{t:'Diagnostiquer un problème réseau', h:`
+<p>On remonte les couches, du plus simple au plus complexe :</p>
+<ol><li><b>Configuration IP</b> : <code>ipconfig /all</code> (Windows) ou <code>ip a</code> et <code>ip route</code> (Linux). Une adresse en 169.254.x.x = pas de DHCP.</li>
+<li><b>Passerelle</b> : <code>ping 192.168.20.254</code>.</li>
+<li><b>Autre zone / Internet par IP</b> : <code>ping 192.168.10.10</code>, <code>ping 8.8.8.8</code>, <code>tracert</code> pour voir où ça bloque.</li>
+<li><b>DNS</b> : <code>nslookup site1.groupe6.internal</code>. Si l'IP marche mais pas le nom, c'est le DNS.</li>
+<li><b>Service / port</b> : <code>Test-NetConnection 192.168.30.10 -Port 80</code> (PowerShell), <code>curl -I http://site1…</code>, <code>ss -tulpn</code> ou <code>netstat -an</code> sur le serveur pour voir s'il écoute.</li>
+<li><b>Pare-feu</b> : journaux en direct d'OPNsense (<i>Firewall › Log Files › Live View</i>) : la ligne rouge montre la règle qui bloque.</li></ol>
+<div class="tbl"><table><tr><th>Symptôme</th><th>Cause probable</th></tr>
+<tr><td>Adresse 169.254.x.x</td><td>Pas de réponse DHCP : relais absent, règle UDP 67/68, serveur DHCP arrêté ou étendue épuisée</td></tr>
+<tr><td>Ping par IP OK, nom KO</td><td>DNS : mauvais serveur DNS reçu, enregistrement absent, port 53 bloqué</td></tr>
+<tr><td>Impossible de joindre le domaine</td><td>DNS du client ne pointe pas vers le DC, ports Kerberos/LDAP/RPC/SMB bloqués, heure décalée de plus de 5 min</td></tr>
+<tr><td>Site joignable par IP du serveur web mais pas par le nom</td><td>Le DNS pointe vers le serveur web au lieu du reverse proxy, ou en-tête Host non reconnu</td></tr></table></div>`},
 {t:'Ports à connaître par cœur', h:`
 <div class="tbl"><table><tr><th>Service</th><th>Port</th><th>Protocole</th></tr>
 <tr><td>FTP</td><td>20/21</td><td>TCP</td></tr><tr><td>SSH</td><td>22</td><td>TCP</td></tr><tr><td>Telnet</td><td>23</td><td>TCP</td></tr>
@@ -124,7 +158,16 @@ cards:[
 ['Port RPC Endpoint Mapper ? SMB ? RDP ?','135 · 445 · 3389'],
 ['Principe du moindre privilège ?','Ne donner que les droits strictement nécessaires ; sur un pare-feu : tout bloquer sauf le nécessaire.'],
 ['Qu\'est-ce qu\'un bastion ?','Machine durcie, unique point d\'entrée pour administrer les serveurs, dont l\'accès est tracé.'],
-['TCP vs UDP ?','TCP : connexion, fiable, ordonné (HTTP, SSH). UDP : sans connexion, rapide, sans garantie (DNS, DHCP, VoIP).']
+['TCP vs UDP ?','TCP : connexion, fiable, ordonné (HTTP, SSH). UDP : sans connexion, rapide, sans garantie (DNS, DHCP, VoIP).'],
+['Comment calculer le « pas » d\'un sous-réseau ?','256 − valeur du masque dans l\'octet coupé (/27 → 224 → pas de 32).'],
+['192.168.10.77/27 : réseau et broadcast ?','Réseau 192.168.10.64, broadcast 192.168.10.95.'],
+['Rôle d\'ARP ?','Trouver l\'adresse MAC correspondant à une IP sur le réseau local.'],
+['Qu\'est-ce que l\'ARP spoofing ?','Répondre à la place de la passerelle pour intercepter le trafic (man-in-the-middle).'],
+['NAT source (PAT) vs redirection de port ?','PAT : le LAN sort avec l\'IP publique du pare-feu. Redirection : un port public est renvoyé vers un serveur interne (publication).'],
+['Commande pour voir sa configuration IP complète sous Windows ?','<code>ipconfig /all</code>'],
+['Ping par IP OK mais pas par nom : quel service est en cause ?','Le DNS.'],
+['Écart d\'heure maximal toléré par Kerberos ?','5 minutes.'],
+['Qu\'est-ce que la route par défaut ?','0.0.0.0/0 : là où l\'on envoie tout ce qui n\'a pas de route plus précise (vers Internet).']
 ],
 quiz:[
 {q:'Qu\'est-ce qu\'un VLAN ?',o:['Un protocole de routage dynamique','Une technologie permettant de créer des réseaux logiques distincts sur un même réseau physique','Une méthode de segmentation réseau','Une méthode de cryptage des données réseau'],a:[1,2],e:'Le VLAN crée des réseaux logiques séparés sur le même matériel : c\'est donc bien une méthode de segmentation. Il ne route pas et ne chiffre pas.',src:'Partiel 2025'},
@@ -155,7 +198,19 @@ quiz:[
 {q:'Quel est le port de Kerberos ?',o:['53','88','389','443'],a:[1],e:'Kerberos : 88 (TCP/UDP). LDAP 389, DNS 53, HTTPS 443.'},
 {q:'Quelle politique de pare-feu respecte le moindre privilège ?',o:['Tout autoriser puis bloquer les attaques connues','Tout bloquer par défaut puis autoriser uniquement le nécessaire','Autoriser tout le trafic sortant','Bloquer uniquement Internet'],a:[1],e:'Deny all par défaut, puis des règles d\'autorisation précises (liste blanche).'},
 {q:'Quel équipement relie des réseaux différents et choisit le chemin des paquets ?',o:['Hub','Switch','Routeur','Point d\'accès'],a:[2],e:'Le routeur travaille en couche 3. Le switch relie les machines d\'un même réseau (couche 2).'},
-{q:'Quelle est la différence entre un proxy et un reverse proxy ?',o:['Aucune','Le proxy sert les clients internes qui sortent ; le reverse proxy reçoit les visiteurs et les renvoie vers les serveurs internes','Le reverse proxy chiffre le disque','Le proxy remplace le DNS'],a:[1],e:'Proxy : sortie des utilisateurs (Squid). Reverse proxy : entrée des visiteurs vers les serveurs (Nginx).'}
+{q:'Quelle est la différence entre un proxy et un reverse proxy ?',o:['Aucune','Le proxy sert les clients internes qui sortent ; le reverse proxy reçoit les visiteurs et les renvoie vers les serveurs internes','Le reverse proxy chiffre le disque','Le proxy remplace le DNS'],a:[1],e:'Proxy : sortie des utilisateurs (Squid). Reverse proxy : entrée des visiteurs vers les serveurs (Nginx).'},
+{q:'Quelle est l\'adresse réseau de 192.168.10.77/27 ?',o:['192.168.10.0','192.168.10.64','192.168.10.72','192.168.10.96'],a:[1],e:'/27 → pas de 32 : 0, 32, 64, 96… 77 est dans le bloc 64-95.'},
+{q:'Quel est le broadcast de 172.20.150.9/20 ?',o:['172.20.150.255','172.20.159.255','172.20.255.255','172.20.144.255'],a:[1],e:'/20 → 3e octet, masque 240, pas de 16 : bloc 144-159, donc broadcast 172.20.159.255.'},
+{q:'On doit loger 50 postes dans un sous-réseau. Quel masque est le plus économe ?',o:['/24','/25','/26','/27'],a:[2],e:'/26 = 64 adresses, 62 hôtes ≥ 50. /27 n\'offre que 30 hôtes.'},
+{q:'En découpant 192.168.1.0/24 en 4 sous-réseaux égaux, quel est le masque obtenu ?',o:['/25','/26','/27','/28'],a:[1],e:'4 = 2² : on emprunte 2 bits, 24 + 2 = /26.'},
+{q:'Quel protocole permet de trouver l\'adresse MAC associée à une adresse IP ?',o:['DNS','DHCP','ARP','ICMP'],a:[2],e:'ARP (Address Resolution Protocol), par une requête en broadcast.'},
+{q:'Quelle commande Windows affiche l\'adresse IP, la passerelle et les serveurs DNS ?',o:['ipconfig /all','netstat -r','ping -a','arp -d'],a:[0],e:'Sous Linux : ip a et ip route, et /etc/resolv.conf pour le DNS.'},
+{q:'Un poste ping 192.168.10.10 mais pas srv-ad01.groupe4.internal. Que vérifier en premier ?',o:['Le câble réseau','Le DNS configuré sur le poste','Le pare-feu HTTP','La carte graphique'],a:[1],e:'La connectivité IP fonctionne ; c\'est la résolution de nom qui échoue.'},
+{q:'Quel mécanisme permet à tout le LAN de sortir sur Internet avec une seule adresse publique ?',o:['VLAN','NAT source / PAT','DHCP Relay','Reverse proxy'],a:[1],e:'Le pare-feu remplace l\'IP source privée par son IP publique et distingue les connexions par les ports.'},
+{q:'Pour publier sur Internet le reverse proxy de la DMZ, on configure sur le pare-feu :',o:['Une redirection de port (NAT destination) vers le reverse proxy','Un relais DHCP','Un VLAN supplémentaire','Une GPO'],a:[0],e:'Le port 443 public est redirigé vers l\'IP interne du reverse proxy, avec une règle qui l\'autorise.'},
+{q:'Quel est l\'écart d\'horloge maximal toléré par défaut par Kerberos ?',o:['30 secondes','5 minutes','1 heure','Aucun'],a:[1],e:'D\'où l\'importance de NTP : au-delà, l\'authentification échoue.'},
+{q:'Que fait la commande tracert (traceroute) ?',o:['Elle affiche les routeurs traversés jusqu\'à la destination','Elle résout un nom DNS','Elle renouvelle le bail DHCP','Elle liste les ports ouverts'],a:[0],e:'Utile pour voir à quel saut le trafic s\'arrête.'},
+{q:'Quelle est la route par défaut ?',o:['127.0.0.1','0.0.0.0/0','255.255.255.255','192.168.0.0/16'],a:[1],e:'Elle couvre toutes les destinations sans route plus précise.'}
 ],
 exos:[
 {t:'Lien entre DHCP et DNS',src:'ancien partiel',pts:'2 pts',q:`<p>Expliquez le lien entre DHCP et DNS dans votre architecture, et le rôle qu'ils jouent pour les clients.</p>`,r:`
@@ -195,6 +250,20 @@ exos:[
 {t:'Calcul d\'adressage',pts:'entraînement',q:`<p>On attribue le réseau <code>192.168.40.0/26</code> à la zone CLT. Donnez : le masque décimal, l'adresse réseau, la première et la dernière adresse utilisable, le broadcast et le nombre d'hôtes.</p>`,r:`
 <ul><li>Masque : <b>255.255.255.192</b> (/26 = 2 bits « empruntés » dans le dernier octet : 128 + 64).</li>
 <li>Adresse réseau : <b>192.168.40.0</b></li><li>Première utilisable : <b>192.168.40.1</b> · dernière : <b>192.168.40.62</b></li>
-<li>Broadcast : <b>192.168.40.63</b></li><li>Hôtes : 2<sup>6</sup> − 2 = <b>62</b></li></ul>`}
+<li>Broadcast : <b>192.168.40.63</b></li><li>Hôtes : 2<sup>6</sup> − 2 = <b>62</b></li></ul>`},
+{t:'Plan d\'adressage d\'une PME',pts:'entraînement',q:`<p>On dispose de <code>192.168.50.0/24</code>. Il faut : une zone CLT de 100 postes, une zone ADM de 20 serveurs, une DMZ de 10 serveurs, et un lien /30 entre deux routeurs. Proposez un découpage (VLSM) avec réseau, masque et plage de chaque zone.</p>`,r:`
+<p>On attribue les plus gros blocs en premier :</p>
+<div class="tbl"><table><tr><th>Zone</th><th>Besoin</th><th>Réseau</th><th>Masque</th><th>Plage utilisable</th><th>Broadcast</th></tr>
+<tr><td>CLT</td><td>100</td><td>192.168.50.0/25</td><td>255.255.255.128</td><td>.1 → .126 (126 hôtes)</td><td>.127</td></tr>
+<tr><td>ADM</td><td>20</td><td>192.168.50.128/27</td><td>255.255.255.224</td><td>.129 → .158 (30 hôtes)</td><td>.159</td></tr>
+<tr><td>DMZ</td><td>10</td><td>192.168.50.160/28</td><td>255.255.255.240</td><td>.161 → .174 (14 hôtes)</td><td>.175</td></tr>
+<tr><td>Lien</td><td>2</td><td>192.168.50.176/30</td><td>255.255.255.252</td><td>.177 → .178</td><td>.179</td></tr></table></div>
+<p>Il reste 192.168.50.180 → .255 pour une évolution. Convention utile : la passerelle (pare-feu) prend la dernière adresse utilisable de chaque zone (.126, .158, .174).</p>`},
+{t:'Diagnostic : le poste n\'a pas d\'adresse',pts:'entraînement',q:`<p>Le poste PC-CLT01 (zone CLT) affiche l'adresse <code>169.254.33.12</code> et ne peut pas ouvrir de session sur le domaine. Le serveur DHCP est SRV-AD01 en zone ADM. Décrivez votre démarche de diagnostic et les causes possibles.</p>`,r:`
+<ol><li><b>Interpréter</b> : 169.254.x.x = APIPA, le poste n'a reçu <b>aucune réponse DHCP</b>. Sans IP valide, pas de DNS, donc pas de domaine.</li>
+<li><b>Relais DHCP</b> : le serveur est dans une autre zone ; vérifier sur OPNsense que le <b>DHCP Relay</b> est activé sur l'interface CLT et pointe vers l'IP de SRV-AD01.</li>
+<li><b>Règles</b> : autoriser UDP 67/68 entre le pare-feu et SRV-AD01 ; regarder le Live View du pare-feu.</li>
+<li><b>Serveur DHCP</b> : service démarré, <b>serveur autorisé dans l'AD</b>, étendue CLT créée et <b>activée</b>, options (routeur = 192.168.20.254, DNS = 192.168.10.10), étendue non épuisée.</li>
+<li><b>Poste</b> : carte réseau sur le bon pont/VLAN, puis <code>ipconfig /release</code> et <code>ipconfig /renew</code>.</li></ol>`}
 ]
 });

@@ -62,6 +62,56 @@ for cle, valeur in golem.items():
 del golem["force"]</code></pre>
 <p>Accéder à une clé absente avec <code>d["x"]</code> lève une <code>KeyError</code>. Une liste de dictionnaires est la structure typique des données d'une API (une liste de quêtes, chacune étant un dictionnaire).</p>
 <p>Autres types : <b>tuple</b> <code>(1, 2)</code> non modifiable ; <b>set</b> <code>{1, 2}</code> sans doublons.</p>`},
+{t:'Lire un programme du cours (random, while, break)',h:`
+<p>Les programmes de la séance (Golem, coffre, donjon) mélangent toutes les bases. Savoir les <b>dérouler à la main</b> est la compétence demandée.</p>
+<pre><code>import random
+
+code_magique = random.randint(1, 20)   # entier entre 1 et 20, bornes INCLUSES
+essais = 0
+inventaire = ["Pièce d'Or"]
+
+while essais &lt; 3:
+    choix = int(input("Choisis un nombre entre 1 et 20 : "))
+    essais += 1
+    if choix == code_magique:
+        inventaire.append("l'Arme Ultime")
+        break                     # sort immédiatement de la boucle
+    elif choix &lt; code_magique:
+        print("Trop bas")
+    else:
+        print("Trop haut")
+
+if essais &gt;= 3 and "l'Arme Ultime" not in inventaire:
+    inventaire.remove("Pièce d'Or")</code></pre>
+<ul><li><code>random.randint(a, b)</code> : entier entre a et b <b>inclus</b>. <code>random.choice(liste)</code> : un élément au hasard. <code>random.choice(range(10, 15))</code> donne 10 à 14 (la fin d'un range est exclue).</li>
+<li><code>essais += 1</code> équivaut à <code>essais = essais + 1</code>.</li>
+<li><code>break</code> quitte la boucle ; <code>continue</code> passe au tour suivant.</li>
+<li><code>while a &gt; 0 and b &gt; 0</code> : la boucle s'arrête dès qu'une des deux conditions devient fausse.</li>
+<li><code>int(input(...))</code> plante (<code>ValueError</code>) si l'utilisateur tape « abc » : il faut un <code>try/except</code>.</li></ul>
+<pre><code>def exploration_donjon():
+    ...
+if __name__ == "__main__":   # vrai seulement si on lance ce fichier directement
+    exploration_donjon()     # (faux si le fichier est importé comme module)</code></pre>`},
+{t:'Erreurs, fichiers et modules',h:`
+<h3>Gérer les erreurs</h3>
+<pre><code>try:
+    tentative = int(input("Code : "))
+except ValueError:
+    print("Entrez un nombre !")
+else:
+    print("Merci")       # si aucune erreur
+finally:
+    print("Toujours exécuté")</code></pre>
+<p>Erreurs fréquentes : <code>SyntaxError</code>, <code>IndentationError</code>, <code>NameError</code> (variable inconnue), <code>TypeError</code> (<code>"3" + 2</code>), <code>ValueError</code> (<code>int("abc")</code>), <code>IndexError</code> (index hors de la liste), <code>KeyError</code> (clé absente d'un dict), <code>ZeroDivisionError</code>. On lève soi-même une erreur avec <code>raise ValueError("message")</code>.</p>
+<h3>Lire et écrire des fichiers</h3>
+<pre><code>with open("quetes.json", "r", encoding="utf-8") as f:   # fermé automatiquement
+    quetes = json.load(f)
+with open("journal.txt", "a", encoding="utf-8") as f:   # "w" écrase, "a" ajoute
+    f.write("Quête terminée\\n")</code></pre>
+<h3>Modules et environnement</h3>
+<ul><li><code>import random</code>, <code>from datetime import datetime</code>, <code>import os</code> : bibliothèque standard.</li>
+<li>Bibliothèques externes avec <b>pip</b> : <code>pip install requests</code>, listées dans <code>requirements.txt</code> (<code>pip freeze &gt; requirements.txt</code>, puis <code>pip install -r requirements.txt</code>).</li>
+<li><b>Environnement virtuel</b> : <code>python -m venv venv</code> puis activation (<code>venv\\Scripts\\activate</code> sous Windows, <code>source venv/bin/activate</code> sous Linux) : chaque projet a ses propres versions, sans polluer le système. Le dossier <code>venv/</code> va dans le <code>.gitignore</code>.</li></ul>`},
 {t:'Client/serveur, HTTP et API REST',h:`
 <p>Le <b>client</b> (navigateur, script Python, <code>curl</code>) envoie une <b>requête</b> ; le <b>serveur</b> la traite et renvoie une <b>réponse</b> avec un <b>code de statut</b>. HTTP est sans état : chaque requête est indépendante.</p>
 <h3>Méthodes HTTP et CRUD</h3>
@@ -142,6 +192,27 @@ ps aux · kill PID · systemctl status squid</code></pre>
 <h3>Permissions</h3>
 <p><code>-rwxr-xr--</code> : type, puis droits du <b>propriétaire</b> (rwx), du <b>groupe</b> (r-x), des <b>autres</b> (r--). r = 4, w = 2, x = 1 : <code>chmod 754</code> = rwx r-x r--. <code>chmod 600</code> = lecture/écriture pour le propriétaire seulement (fichier de secrets, clé SSH).</p>
 <p>Arborescence : <code>/</code> racine, <code>/home</code> utilisateurs, <code>/etc</code> configuration, <code>/var/log</code> journaux, <code>/tmp</code> temporaire, <code>/root</code> dossier de root. Chemin <b>absolu</b> (commence par /) ou <b>relatif</b> (depuis le dossier courant).</p>`},
+{t:'Tests et sécurité du code',h:`
+<h3>Tests unitaires avec pytest</h3>
+<pre><code># test_pet.py
+import pytest
+from pet import nourrir
+
+def test_nourrir_reduit_la_faim():
+    pet = {"faim": 70, "energie": 40, "humeur": 50, "vivant": True}
+    assert nourrir(pet)["faim"] == 40
+
+def test_animal_mort():
+    with pytest.raises(ValueError):
+        nourrir({"faim": 0, "energie": 0, "humeur": 0, "vivant": False})</code></pre>
+<p>On lance <code>pytest</code> : chaque fonction <code>test_…</code> est exécutée, un <code>assert</code> faux fait échouer le test. On teste le cas normal, les <b>cas limites</b> (0, 100, liste vide) et les <b>cas d'erreur</b>. Avec Flask, on teste les routes via <code>app.test_client()</code> en vérifiant le code de statut et le JSON.</p>
+<h3>Réflexes de sécurité</h3>
+<ul><li><b>Jamais de secret dans le code</b> : variables d'environnement (<code>os.getenv("API_KEY")</code>), fichier <code>.env</code> ignoré par Git, secrets GitHub dans la CI.</li>
+<li><b>Valider les entrées</b> : types, bornes, champs obligatoires ; refuser avec 400/422.</li>
+<li><b>Jamais <code>eval()</code></b> sur une donnée utilisateur ; pas de <code>subprocess</code> avec <code>shell=True</code> et une entrée utilisateur (injection de commande).</li>
+<li><b>Requêtes SQL paramétrées</b> (voir Fondamentaux › OWASP).</li>
+<li><b>Mode debug désactivé</b> en production (<code>app.run(debug=False)</code>) : le débogueur Flask permet d'exécuter du code.</li>
+<li>Dépendances à jour, vérifiées par la SCA ; image Docker minimale (<code>python:3.12-slim</code>) qui ne tourne pas en root.</li></ul>`},
 {t:'Dev, Ops, DevOps, DevSecOps',h:`
 <ul><li><b>Dev</b> : les développeurs, qui écrivent le code et veulent livrer vite.</li>
 <li><b>Ops</b> : les opérations, qui exploitent les serveurs et veulent la stabilité.</li>
@@ -221,7 +292,17 @@ cards:[
 ['Image vs conteneur Docker ?','L\'image est le modèle ; le conteneur est une image en cours d\'exécution.'],
 ['Rendre les données d\'un conteneur persistantes ?','Utiliser un volume (<code>-v nom:/chemin</code>).'],
 ['Où stocker les mots de passe d\'un pipeline GitHub Actions ?','Dans les secrets GitHub, lus avec <code>${{ secrets.NOM }}</code>.'],
-['CI vs CD ?','CI : construire et tester automatiquement à chaque push. CD : livrer/déployer automatiquement.']
+['CI vs CD ?','CI : construire et tester automatiquement à chaque push. CD : livrer/déployer automatiquement.'],
+['<code>random.randint(1, 20)</code> peut-il renvoyer 20 ?','Oui : les deux bornes sont incluses.'],
+['Que fait <code>break</code> ? et <code>continue</code> ?','break quitte la boucle ; continue passe directement au tour suivant.'],
+['À quoi sert <code>if __name__ == "__main__":</code> ?','Exécuter le code seulement si le fichier est lancé directement, pas quand il est importé.'],
+['Erreur levée par <code>int("abc")</code> ?','<code>ValueError</code>'],
+['Erreur levée par <code>"3" + 2</code> ?','<code>TypeError</code>'],
+['Pourquoi utiliser <code>with open(...)</code> ?','Le fichier est fermé automatiquement, même en cas d\'erreur.'],
+['Mode "w" vs "a" de open() ?','"w" écrase le fichier ; "a" ajoute à la fin.'],
+['À quoi sert un environnement virtuel (venv) ?','Isoler les dépendances d\'un projet ; on le crée avec <code>python -m venv venv</code>.'],
+['Où mettre une clé d\'API dans un projet Python ?','Dans une variable d\'environnement (os.getenv), jamais dans le code ni dans Git.'],
+['Pourquoi ne jamais utiliser eval() sur une entrée utilisateur ?','Elle exécute n\'importe quel code Python : exécution de code arbitraire.']
 ],
 quiz:[
 {q:'Que affiche ce code ?',code:'x = 7\ny = 2\nprint(x // y, x % y)',o:['3.5 1','3 1','3 0','4 1'],a:[1],e:'// est la division entière (3), % le reste (1).'},
@@ -253,7 +334,19 @@ quiz:[
 {q:'Où stocker le mot de passe Docker Hub utilisé par GitHub Actions ?',o:['Dans le fichier YAML','Dans le code Python','Dans les secrets GitHub','Dans le README'],a:[2],e:'Les secrets chiffrés de GitHub sont injectés à l\'exécution, jamais écrits en clair.'},
 {q:'Comment rendre les données d\'un conteneur persistantes ?',o:['Avec un volume Docker','Avec docker ps','Avec EXPOSE','Impossible'],a:[0],e:'-v nom_volume:/app/data : les données survivent à la suppression du conteneur.'},
 {q:'Dans « docker run -p 8080:5000 app », à quoi correspond 8080 ?',o:['Au port dans le conteneur','Au port de la machine hôte','Au numéro de version','À la mémoire'],a:[1],e:'-p hôte:conteneur : on accède à l\'appli sur localhost:8080, qui écoute sur 5000 dans le conteneur.'},
-{q:'Que fait la CI (intégration continue) ?',o:['Elle écrit le code','Elle construit et teste automatiquement le code à chaque push','Elle remplace Git','Elle chiffre le dépôt'],a:[1],e:'La CI détecte les erreurs au plus tôt ; la CD publie/déploie ensuite.'}
+{q:'Que fait la CI (intégration continue) ?',o:['Elle écrit le code','Elle construit et teste automatiquement le code à chaque push','Elle remplace Git','Elle chiffre le dépôt'],a:[1],e:'La CI détecte les erreurs au plus tôt ; la CD publie/déploie ensuite.'},
+{q:'Quelles valeurs peut prendre degats ?',code:'import random\ndegats = random.choice(range(10, 15))',o:['10 à 15','10 à 14','11 à 14','0 à 15'],a:[1],e:'range(10, 15) = 10, 11, 12, 13, 14 : la fin est exclue. random.randint(10, 14) donnerait la même chose.'},
+{q:'Combien de fois au maximum le joueur peut-il proposer un nombre ?',code:'essais = 0\nwhile essais < 3:\n    choix = int(input("Nombre : "))\n    essais += 1\n    if choix == code_magique:\n        break',o:['2','3','4','Infini'],a:[1],e:'essais vaut 0, 1, 2 au début des tours : 3 tours, sauf si break arrête avant.'},
+{q:'Que affiche ce code ?',code:'pv_golem = 50\npv_joueur = 100\ntours = 0\nwhile pv_golem > 0:\n    pv_golem -= 12\n    pv_joueur -= 7\n    tours += 1\nprint(tours, pv_joueur)',o:['4 72','5 65','5 72','4 65'],a:[1],e:'50 → 38 → 26 → 14 → 2 → -10 : 5 tours ; 100 − 5×7 = 65.'},
+{q:'Que affiche ce code ?',code:'inventaire = ["Pièce d\'Or"]\ninventaire.append("Clé")\ninventaire.remove("Pièce d\'Or")\nprint(len(inventaire), inventaire[0])',o:['1 Clé','2 Clé','1 Pièce d\'Or','Erreur'],a:[0],e:'Après append puis remove, il ne reste que "Clé".'},
+{q:'Quel est l\'effet de if __name__ == "__main__": exploration_donjon() ?',o:['La fonction est appelée même si le fichier est importé','La fonction n\'est appelée que si le fichier est exécuté directement','La fonction n\'est jamais appelée','Cela crée une classe'],a:[1],e:'À l\'import, __name__ vaut le nom du module, pas "__main__".'},
+{q:'L\'utilisateur tape « abc ». Quelle erreur provoque int(input()) ?',o:['TypeError','ValueError','NameError','KeyError'],a:[1],e:'La valeur n\'est pas convertible en entier : ValueError, à intercepter avec try/except.'},
+{q:'Que affiche ce code ?',code:'try:\n    x = 10 / 0\nexcept ZeroDivisionError:\n    print("A")\nfinally:\n    print("B")',o:['A','B','A puis B','Une erreur'],a:[2],e:'L\'exception est interceptée (A), puis finally s\'exécute toujours (B).'},
+{q:'Quel mode d\'ouverture ajoute du texte à la fin d\'un fichier sans l\'effacer ?',o:['"r"','"w"','"a"','"x"'],a:[2],e:'"w" efface le contenu existant.'},
+{q:'Quelle commande crée un environnement virtuel Python nommé venv ?',o:['pip install venv','python -m venv venv','git init venv','docker run venv'],a:[1],e:'On l\'active ensuite, puis pip install -r requirements.txt.'},
+{q:'Dans un test pytest, que provoque un assert dont la condition est fausse ?',o:['Rien','L\'échec du test','La suppression du fichier','Un commit'],a:[1],e:'pytest affiche alors la valeur obtenue et la valeur attendue.'},
+{q:'Lesquelles sont de mauvaises pratiques de sécurité dans une API Python ?',o:['app.run(debug=True) en production','Clé d\'API écrite dans le code source','Requêtes SQL paramétrées','eval() sur un champ envoyé par l\'utilisateur'],a:[0,1,3],e:'Les requêtes paramétrées sont la bonne pratique contre l\'injection SQL.'},
+{q:'Que fait random.randint(1, 10) ?',o:['Un entier de 1 à 9','Un entier de 1 à 10','Un décimal entre 1 et 10','Une liste de 10 nombres'],a:[1],e:'Les deux bornes sont incluses, contrairement à range.'}
 ],
 exos:[
 {t:'Écrire une fonction Python',pts:'entraînement',q:`<p>Écrivez une fonction <code>nourrir(pet)</code> pour le Tamagochi : <code>pet</code> est un dictionnaire <code>{"faim": 70, "energie": 40, "humeur": 50, "vivant": True}</code>. Nourrir réduit la faim de 30 et augmente l'énergie et l'humeur de 10. Les valeurs restent entre 0 et 100. Si l'animal est mort, la fonction lève une erreur.</p>`,r:`
@@ -292,6 +385,39 @@ git push -u origin develop</code></pre>
 <li><b>Qualité</b> : <code>black --check</code> (formatage homogène), <code>flake8</code> (erreurs et mauvaises pratiques), <code>pytest</code> (tests unitaires des routes et des règles de gestion).</li>
 <li><b>Sécurité</b> : <code>bandit -r .</code> (SAST : mots de passe en dur, eval, requêtes injectables) et <code>pip-audit</code> (SCA : dépendances avec CVE connues). Option : gitleaks (secrets), Trivy (image).</li>
 <li><b>Build et push</b> : <code>docker build</code> puis connexion à Docker Hub avec <code>secrets.DOCKERHUB_USERNAME</code> et <code>secrets.DOCKERHUB_TOKEN</code>, puis <code>docker push</code>, uniquement sur main si tout est vert.</li></ol>
-<p>Justification DevSecOps : chaque problème est détecté automatiquement le plus tôt possible, avant d'arriver en production, et les secrets restent dans le coffre chiffré de GitHub.</p>`}
+<p>Justification DevSecOps : chaque problème est détecté automatiquement le plus tôt possible, avant d'arriver en production, et les secrets restent dans le coffre chiffré de GitHub.</p>`},
+{t:'Dérouler le combat contre le Golem',pts:'entraînement',q:`<pre><code>golem = 50
+joueur = 100
+for coup in [14, 2, 20, 0, 20]:
+    if golem &lt;= 0:
+        break
+    golem -= coup
+    joueur -= 7
+print(golem, joueur)</code></pre><p>Donnez l'affichage en détaillant chaque tour, puis réécrivez la boucle avec un <code>while</code> qui s'arrête aussi si le joueur n'a plus de PV.</p>`,r:`
+<div class="tbl"><table><tr><th>Tour</th><th>coup</th><th>golem</th><th>joueur</th></tr>
+<tr><td>1</td><td>14</td><td>36</td><td>93</td></tr><tr><td>2</td><td>2</td><td>34</td><td>86</td></tr>
+<tr><td>3</td><td>20</td><td>14</td><td>79</td></tr><tr><td>4</td><td>0</td><td>14</td><td>72</td></tr>
+<tr><td>5</td><td>20</td><td>-6</td><td>65</td></tr></table></div>
+<p>Affichage : <code>-6 65</code> (le <code>break</code> n'a pas servi : la boucle s'arrête faute de coups).</p>
+<pre><code>coups = [14, 2, 20, 0, 20]
+i = 0
+while golem &gt; 0 and joueur &gt; 0 and i &lt; len(coups):
+    golem -= coups[i]
+    joueur -= 7
+    i += 1
+print(max(0, golem), max(0, joueur))</code></pre>`},
+{t:'Fiabiliser une saisie',pts:'entraînement',q:`<p>Écrivez une fonction <code>demander_code()</code> qui redemande un nombre entre 1 et 10 tant que la saisie n'est pas un entier valide dans cet intervalle, puis le renvoie.</p>`,r:`
+<pre><code>def demander_code():
+    while True:
+        saisie = input("Code (1 à 10) : ")
+        try:
+            n = int(saisie)
+        except ValueError:
+            print("Ce n'est pas un nombre.")
+            continue
+        if 1 &lt;= n &lt;= 10:
+            return n
+        print("Le code doit être entre 1 et 10.")</code></pre>
+<p>Points clés : boucle infinie quittée par <code>return</code>, <code>try/except ValueError</code> pour les saisies non numériques, contrôle des bornes. C'est de la <b>validation d'entrée</b>, premier réflexe de sécurité.</p>`}
 ]
 });

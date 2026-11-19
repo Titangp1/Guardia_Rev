@@ -36,6 +36,21 @@ fiche:[
 <li>Fautes, mise en forme inhabituelle, pièce jointe inattendue.</li></ul>
 <p>Variantes : <b>spear phishing</b> (ciblé), <b>whaling</b> (cible un dirigeant), <b>smishing</b> (SMS), <b>vishing</b> (appel vocal, éventuellement voix clonée par IA), <b>fraude au président</b>.</p>
 <p>Signes de compromission d'une boîte mail : connexion depuis un terminal/pays inhabituel, <b>règles de transfert ou de suppression créées</b>, messages envoyés à l'insu de l'utilisateur, demandes répétées de reconnexion (jeton révoqué ou session volée).</p>`},
+{t:'Analyser un email suspect',h:`
+<p>Le nom affiché (« Microsoft 365 Security ») se falsifie librement ; il faut regarder les <b>en-têtes</b> (dans Outlook : Fichier › Propriétés ; dans Gmail : Afficher l'original).</p>
+<ul><li><b>From</b> (adresse réelle), <b>Reply-To</b> (une adresse de réponse différente est un signal), <b>Return-Path</b>.</li>
+<li><b>Received</b> : les serveurs traversés, du plus récent (en haut) au plus ancien ; l'IP d'origine est vers le bas.</li>
+<li><b>SPF</b> : le serveur d'envoi est-il autorisé par le domaine ? (enregistrement DNS TXT). <b>DKIM</b> : signature cryptographique du message par le domaine. <b>DMARC</b> : politique du domaine si SPF/DKIM échouent (none, quarantine, reject) et rapports.</li>
+<li>Résultat dans <code>Authentication-Results: spf=fail dkim=none dmarc=fail</code> : message très probablement usurpé.</li>
+<li>Les <b>liens</b> : survoler pour voir l'URL réelle ; domaine proche (typosquatting), raccourcisseur, IP brute. Analyser une URL ou une pièce jointe dans un service comme VirusTotal (sans cliquer).</li></ul>
+<div class="trap">Un mail peut passer SPF et DKIM et être malveillant : il suffit qu'il vienne d'un domaine de l'attaquant (micr0soft-support.com) ou d'une <b>vraie boîte compromise</b>, comme le faux IBAN envoyé depuis la boîte Finance dans ORION.</div>`},
+{t:'Les pièges de l\'analyse',h:`
+<ul><li><b>Biais de confirmation</b> : ne retenir que les indices qui vont dans le sens de sa première idée. Parade : chercher activement ce qui contredirait l'hypothèse.</li>
+<li><b>Attribution hâtive</b> : « connexion depuis Amsterdam donc groupe néerlandais », « vocal parfait donc IA ». Une localisation ou un style ne désignent pas un auteur.</li>
+<li><b>Confondre corrélation et causalité</b> : deux événements proches dans le temps ne sont pas forcément liés.</li>
+<li><b>Faire confiance à un outil sans savoir ce qu'il mesure</b> (score « 92 % IA »).</li>
+<li><b>Confondre absence de preuve et preuve d'absence</b> : « aucune exfiltration confirmée » ne veut pas dire « aucune exfiltration ».</li></ul>
+<p>Formulations utiles : « les éléments disponibles <b>indiquent</b> », « nous <b>estimons</b> avec une confiance moyenne », « <b>rien ne permet à ce stade</b> d'affirmer ».</p>`},
 {t:'Réagir : contenir, éradiquer, restaurer',h:`
 <p>Cycle de réponse à incident (NIST) : <b>Préparation → Détection et analyse → Confinement, éradication, restauration → Retour d'expérience</b>.</p>
 <h3>Décisions prioritaires dans ORION</h3>
@@ -74,7 +89,13 @@ cards:[
 ['Les phases de la réponse à incident (NIST) ?','Préparation ; détection et analyse ; confinement, éradication, restauration ; retour d\'expérience.'],
 ['Une connexion depuis Amsterdam prouve-t-elle l\'origine de l\'attaquant ?','Non : VPN, proxy ou service distant ; c\'est un indice, pas une attribution.'],
 ['Un score « 92 % généré par IA » est-il une preuve ?','Non, si l\'on ne sait pas ce que l\'outil mesure : c\'est au mieux un indice.'],
-['Mesure qui rend un mot de passe volé inutile ?','L\'authentification multifacteur (MFA / A2F).']
+['Mesure qui rend un mot de passe volé inutile ?','L\'authentification multifacteur (MFA / A2F).'],
+['SPF ?','Enregistrement DNS qui liste les serveurs autorisés à envoyer des mails pour un domaine.'],
+['DKIM ?','Signature cryptographique du message par le domaine expéditeur.'],
+['DMARC ?','Politique du domaine (none, quarantine, reject) quand SPF/DKIM échouent, avec rapports.'],
+['Biais de confirmation ?','Ne retenir que les indices qui confirment sa première hypothèse.'],
+['« Aucune exfiltration confirmée » = « aucune exfiltration » ?','Non : absence de preuve n\'est pas preuve d\'absence.'],
+['Quel en-tête révèle l\'adresse de réponse réelle d\'un mail ?','Reply-To (à comparer avec From).']
 ],
 quiz:[
 {q:'« La collaboratrice a saisi son mot de passe sur la page du lien » (déclaré au support). C\'est :',o:['Un fait établi par sa déclaration','Une hypothèse sans fondement','Une incertitude','Une attribution'],a:[0],e:'C\'est un fait déclaratif, appuyé par la pièce 2. Que cette saisie soit à l\'origine de la session de 08 h 32 reste une déduction (très probable).'},
@@ -88,7 +109,13 @@ quiz:[
 {q:'Quelle mesure aurait le plus limité l\'attaque, même après la saisie du mot de passe ?',o:['Un antivirus plus récent','L\'authentification multifacteur','Un écran plus grand','Changer de navigateur'],a:[1],e:'Avec la MFA, le mot de passe seul ne suffit pas à ouvrir une session.'},
 {q:'Dans un briefing à la direction, que faut-il présenter en premier ?',o:['Les journaux bruts','Une synthèse : établi, évalué, décisions à prendre','La liste des outils utilisés','L\'historique de l\'entreprise'],a:[1],e:'Le décideur doit comprendre vite et savoir quoi décider.'},
 {q:'Le vishing désigne :',o:['Un phishing par SMS','Un phishing par appel ou message vocal','Un virus','Un pare-feu'],a:[1],e:'Voice phishing. Le smishing est par SMS.'},
-{q:'Dans la réponse à incident, l\'étape qui consiste à empêcher l\'attaquant de continuer s\'appelle :',o:['Préparation','Confinement','Retour d\'expérience','Attribution'],a:[1],e:'Puis viennent éradication et restauration.'}
+{q:'Dans la réponse à incident, l\'étape qui consiste à empêcher l\'attaquant de continuer s\'appelle :',o:['Préparation','Confinement','Retour d\'expérience','Attribution'],a:[1],e:'Puis viennent éradication et restauration.'},
+{q:'Un mail affiche « Authentication-Results: spf=fail; dmarc=fail ». Qu\'en conclure ?',o:['Le mail est authentique','Le serveur d\'envoi n\'est pas autorisé par le domaine affiché : usurpation probable','La pièce jointe est saine','Le destinataire est piraté'],a:[1],e:'C\'est un indice fort d\'usurpation du domaine expéditeur.'},
+{q:'Le faux IBAN d\'ORION a été envoyé depuis la vraie boîte Finance. SPF et DKIM :',o:['échouent forcément','passent probablement, car le mail part du vrai serveur de l\'école','n\'existent pas pour Microsoft 365','bloquent le message'],a:[1],e:'SPF/DKIM authentifient le domaine, pas l\'intention : une boîte compromise envoie des mails « authentiques ».'},
+{q:'Quel enregistrement indique quels serveurs peuvent envoyer des mails pour un domaine ?',o:['MX','SPF','PTR','CNAME'],a:[1],e:'SPF est un enregistrement TXT dans le DNS du domaine. MX indique où recevoir les mails.'},
+{q:'« La connexion vient d\'Amsterdam, l\'attaquant est donc néerlandais. » Quel piège ?',o:['Biais de confirmation / attribution hâtive','Absence de preuve','Faux négatif','Aucun piège'],a:[0],e:'VPN, proxy, serveur loué : la géolocalisation d\'une IP ne désigne pas un auteur.'},
+{q:'Quelle formulation convient à une hypothèse non démontrée ?',o:['« Il est certain que l\'IA a été utilisée »','« Nous estimons, avec une confiance faible, que le vocal a pu être généré par IA »','« L\'IA a fait le coup »','« Aucune IA n\'a été utilisée »'],a:[1],e:'On sépare clairement le supposé de l\'établi et on donne le niveau de confiance.'},
+{q:'Un fournisseur reçoit une demande de changement d\'IBAN. Quelle vérification est la plus sûre ?',o:['Répondre au mail pour demander confirmation','Appeler le numéro indiqué dans le mail','Rappeler au numéro habituel, connu avant la demande','Vérifier l\'orthographe du mail'],a:[2],e:'Répondre au mail ou appeler le numéro du mail revient à parler à l\'attaquant.'}
 ],
 exos:[
 {t:'Grille d\'analyse V1',pts:'entraînement',q:`<p>À partir des pièces 1 à 6 d'ORION (mail « Microsoft 365 Security » à 08 h 14, saisie du mot de passe déclarée à 08 h 27, connexion réussie depuis un nouveau terminal à 08 h 32, règle de transfert « Facture / IBAN / Paiement » à 08 h 36, appel d'un fournisseur qui a reçu une demande de changement d'IBAN à 09 h 08 ; à 09 h 20 aucun chiffrement, aucune exfiltration confirmée, aucun autre compte touché), remplissez : faits, hypothèse privilégiée et éléments, qualification, incertitudes, vérifications, conclusion en 5 lignes.</p>`,r:`

@@ -60,6 +60,28 @@ School shootings have continued since 2012.</code></pre>
 <li><b>can / could</b> : capacité, possibilité · <b>may / might</b> : probabilité.</li></ul>
 <h3>Connecteurs</h3>
 <p>First, then, after that, finally · because, so, therefore · however, but, although · for example, such as · in addition, moreover · to conclude, in short.</p>`},
+{t:'Writing a professional email or report',h:`
+<pre><code>Subject: Security incident – finance mailbox (update 1)
+
+Dear Ms Martin,
+
+I am writing to inform you that an employee's account was compromised this morning.
+At 8:32, an attacker logged in from an unknown device and created a forwarding rule.
+We have already blocked the account and reset the password.
+We recommend enabling two-step login for all staff as soon as possible.
+
+Please let me know if you have any questions.
+
+Best regards,
+Alex Martin
+Junior Security Analyst</code></pre>
+<ul><li>Ouvrir : <i>Dear Mr / Ms + nom</i> (formel), <i>Hi Lucas</i> (informel). Fermer : <i>Best regards, Kind regards</i>.</li>
+<li>Annoncer le but : <i>I am writing to inform you / to ask about…</i></li>
+<li>Ce qui est fait : <i>We have already…</i> (present perfect) ; ce qui est prévu : <i>We will… / We are going to…</i></li>
+<li>Recommander : <i>We recommend + -ing</i> ou <i>We recommend that you…</i>, <i>You should…</i></li>
+<li>Rester prudent : <i>It seems that… / It is likely that… / We cannot confirm yet that…</i></li></ul>
+<h3>Verbes utiles</h3>
+<p>to breach (pénétrer, violer), to leak (fuiter), to hack into (pirater), to steal credentials, to spoof (usurper), to patch (corriger), to update, to back up (sauvegarder), to restore, to monitor (surveiller), to detect, to block, to report, to warn, to train staff.</p>`},
 {t:'Giving a presentation',h:`
 <ul><li><b>Introduce</b> : <i>Good morning everyone. Today, we're going to talk about… Our presentation is divided into four parts.</i></li>
 <li><b>Move on</b> : <i>Let's move on to… Now, Lucas is going to explain… As you can see on this slide…</i></li>
@@ -96,7 +118,20 @@ cards:[
 ['Annoncer la partie suivante d\'une présentation ?','<i>Let\'s move on to… / Now, X is going to explain…</i>'],
 ['Conclure une présentation ?','<i>To sum up… Thank you for your attention. Any questions?</i>'],
 ['a deadline','une échéance, une date limite'],
-['lock picking','le crochetage de serrures']
+['lock picking','le crochetage de serrures'],
+['to patch','corriger (appliquer un correctif)'],
+['to back up · a backup','sauvegarder · une sauvegarde'],
+['to leak · a leak','fuiter · une fuite'],
+['to spoof','usurper (une adresse, une identité)'],
+['to monitor','surveiller, superviser'],
+['Formule pour annoncer le but d\'un email formel ?','<i>I am writing to inform you that…</i>'],
+['Formule de fin d\'email professionnel ?','<i>Best regards / Kind regards</i>'],
+['« Nous recommandons d\'activer… » en anglais ?','<i>We recommend enabling…</i> (recommend + -ing)'],
+['Rester prudent sur un fait non confirmé ?','<i>It seems that… / We cannot confirm yet that…</i>'],
+['currently','actuellement (≠ actually)'],
+['a supplier','un fournisseur'],
+['an invoice','une facture'],
+['bank details','coordonnées bancaires']
 ],
 quiz:[
 {q:'Choose the correct form: "On December 14, 2012, a man ___ the school."',o:['has entered','entered','enters','was enter'],a:[1],e:'Date précise → past simple.'},
@@ -113,13 +148,21 @@ quiz:[
 {q:'"Did the student ___ on the link?"',o:['clicked','click','clicks','clicking'],a:[1],e:'Après did, base verbale.'},
 {q:'In the GDPR, a data breach must be reported:',o:['within 24 hours','within 72 hours','within one week','never'],a:[1],e:'Within 72 hours to the supervisory authority (CNIL in France).'},
 {q:'A physical pentester carries a "letter of authorisation" to:',o:['open doors','prove the intrusion is legal and ordered by the client','pay the guards','clone badges'],a:[1],e:'It shows they are not a burglar but a contracted tester.'},
-{q:'Choose the correct form: "I ___ him yesterday."',o:['have seen','saw','have saw','seen'],a:[1],e:'Yesterday = moment précis → past simple.'}
+{q:'Choose the correct form: "I ___ him yesterday."',o:['have seen','saw','have saw','seen'],a:[1],e:'Yesterday = moment précis → past simple.'},
+{q:'"We recommend ___ two-step login."',o:['enable','to enabling','enabling','enabled'],a:[2],e:'recommend + verbe en -ing (ou recommend that you enable).'},
+{q:'Best opening for a formal email to a manager you don\'t know:',o:['Hey!','Dear Ms Martin,','Yo Martin','Hi guys,'],a:[1],e:'Dear + Mr/Ms + nom de famille.'},
+{q:'"Une facture" in English is:',o:['a facture','an invoice','a bill of lading','a receipt only'],a:[1],e:'Invoice (facture) ; receipt = reçu.'},
+{q:'"Les coordonnées bancaires" in English:',o:['bank coordinates','bank details','bank address','bank points'],a:[1],e:'Bank details (ou bank account details).'},
+{q:'Choose the correct sentence:',o:['We have already blocked the account.','We already have block the account.','We have blocked already the account yesterday.','We blocked already the account.'],a:[0],e:'have + already + participe passé ; pas de « yesterday » avec le present perfect.'},
+{q:'"To patch a system" means:',o:['le réparer physiquement','lui appliquer un correctif','le débrancher','le peindre'],a:[1],e:'A patch = un correctif de sécurité.'},
+{q:'Which sentence is the most cautious?',o:['The attacker is Dutch.','It seems that the attacker used a VPN in Amsterdam.','The attacker is definitely an AI.','Amsterdam attacked us.'],a:[1],e:'It seems that… exprime une hypothèse, pas un fait.'},
+{q:'"Actuellement, nous analysons les logs" =',o:['Actually, we are analysing the logs.','Currently, we are analysing the logs.','Eventually, we analyse the logs.','Actual, we analyse logs.'],a:[1],e:'Actuellement = currently ; actually = en fait.'}
 ],
 exos:[
 {t:'Write an incident summary',pts:'entraînement',q:`<p>Write 5–6 sentences in English to explain the ORION incident to a manager: what happened, what is sure, what you recommend.</p>`,r:`
 <p><i>This morning, an employee from the finance department received a fake Microsoft email. She clicked on the link and typed her password. A few minutes later, an attacker logged in to her mailbox from an unknown device and created a rule to forward emails about invoices and payments. He then asked a supplier to change the bank details. Fortunately, the supplier called us and no money has been lost. We recommend blocking the account, enabling two-step login for everyone and checking every bank detail change by phone.</i></p>
 <p>À vérifier : past simple pour la chronologie, present perfect pour le résultat (<i>no money has been lost</i>), connecteurs (this morning, a few minutes later, then, fortunately), modal/verbe de recommandation.</p>`},
 {t:'Present a cyber job',pts:'entraînement',q:`<p>Prepare a 1-minute introduction for a presentation about a cybersecurity job (structure: greeting, topic, plan, transition).</p>`,r:`
-<p><i>Good morning everyone. My name is Tristan and today I'm going to present a rare job in cybersecurity: the physical penetration tester. My presentation is divided into four parts. First, I'll explain what a physical pentester is. Then, I'll describe a typical mission, step by step. After that, we'll look at the skills you need. Finally, I'll talk about the pros, the cons and the salary. So, let's start with a simple question: what is a physical pentester?</i></p>`}
+<p><i>Good morning everyone. My name is Alex and today I'm going to present a rare job in cybersecurity: the physical penetration tester. My presentation is divided into four parts. First, I'll explain what a physical pentester is. Then, I'll describe a typical mission, step by step. After that, we'll look at the skills you need. Finally, I'll talk about the pros, the cons and the salary. So, let's start with a simple question: what is a physical pentester?</i></p>`}
 ]
 });

@@ -81,6 +81,17 @@ h1 { color: #e8492b; font-size: 2rem; }</code></pre>
 <p><b>Unités</b> : <code>px</code> (fixe), <code>%</code> (du parent), <code>em</code> (taille de police du parent), <code>rem</code> (taille de police de la racine), <code>vw/vh</code> (% de la fenêtre).</p>
 <p><b>Couleurs</b> : nom (<code>red</code>), hexadécimal (<code>#ff0000</code>), <code>rgb(255,0,0)</code>, <code>rgba(255,0,0,.5)</code> (avec transparence).</p>
 <p>Texte : <code>font-family</code>, <code>font-size</code>, <code>font-weight</code>, <code>text-align</code>, <code>line-height</code>, <code>color</code>. Fond : <code>background-color</code>, <code>background-image</code>.</p>`},
+{t:'Accessibilité et bonnes pratiques',h:`
+<ul><li>Un seul <code>&lt;h1&gt;</code>, puis des titres dans l'ordre (h2, h3) : les lecteurs d'écran naviguent par titres.</li>
+<li><code>alt</code> descriptif sur les images porteuses de sens ; <code>alt=""</code> pour les images décoratives.</li>
+<li>Chaque champ de formulaire a un <code>&lt;label&gt;</code> relié ; un bouton est un <code>&lt;button&gt;</code>, un lien un <code>&lt;a&gt;</code>.</li>
+<li><b>Contraste</b> suffisant entre texte et fond (au moins 4,5:1 pour le texte courant) ; ne jamais transmettre une information uniquement par la couleur.</li>
+<li>Tout doit être utilisable <b>au clavier</b> (Tab) avec un focus visible.</li>
+<li><code>lang="fr"</code> sur <code>&lt;html&gt;</code> pour la bonne prononciation.</li></ul>
+<h3>Chemins de fichiers</h3>
+<p><b>Relatif</b> au fichier HTML : <code>images/dragon.jpeg</code>, <code>../styles.css</code> (dossier parent). <b>Absolu</b> : <code>https://site.fr/img.png</code> ou <code>/img.png</code> (racine du site). Une image qui ne s'affiche pas vient souvent d'un mauvais chemin ou d'une différence de majuscules (<code>Dragon.jpeg</code> ≠ <code>dragon.jpeg</code> sur un serveur Linux).</p>
+<h3>Lien externe sûr</h3>
+<p><code>&lt;a href="…" target="_blank" rel="noopener"&gt;</code> : <code>rel="noopener"</code> empêche la page ouverte de manipuler la page d'origine.</p>`},
 {t:'Mise en page : display, flexbox, responsive',h:`
 <p><code>display</code> : <code>block</code>, <code>inline</code>, <code>inline-block</code>, <code>none</code> (masqué), <code>flex</code>, <code>grid</code>.</p>
 <pre><code>.menu {
@@ -119,7 +130,12 @@ cards:[
 ['justify-content vs align-items (flexbox) ?','justify-content : axe principal. align-items : axe secondaire.'],
 ['À quoi sert @media ?','Appliquer des règles selon la taille d\'écran : site responsive.'],
 ['Masquer un élément en CSS ?','<code>display: none;</code>'],
-['Pourquoi revalider côté serveur ?','La validation HTML se contourne : le serveur ne doit jamais faire confiance au client.']
+['Pourquoi revalider côté serveur ?','La validation HTML se contourne : le serveur ne doit jamais faire confiance au client.'],
+['alt d\'une image purement décorative ?','<code>alt=""</code> (vide) : le lecteur d\'écran l\'ignore.'],
+['Contraste minimal recommandé pour le texte courant ?','4,5:1 (WCAG niveau AA).'],
+['Chemin relatif vers styles.css situé dans le dossier parent ?','<code>../styles.css</code>'],
+['Pourquoi ajouter rel="noopener" à un lien target="_blank" ?','Pour que la page ouverte ne puisse pas manipuler la page d\'origine.'],
+['Rôle de la balise meta viewport ?','Adapter la largeur de la page à l\'écran du mobile.']
 ],
 quiz:[
 {q:'Quelle balise contient le contenu visible de la page ?',o:['<head>','<body>','<meta>','<title>'],a:[1],e:'head contient les métadonnées ; body le contenu affiché.'},
@@ -139,7 +155,13 @@ quiz:[
 {q:'Quelle unité est relative à la taille de police de l\'élément racine ?',o:['em','rem','px','%'],a:[1],e:'rem = root em.'},
 {q:'Comment cacher un élément tout en libérant sa place ?',o:['visibility: hidden','display: none','opacity: 0','color: transparent'],a:[1],e:'visibility:hidden et opacity:0 cachent mais gardent la place.'},
 {q:'La validation required d\'un champ HTML suffit-elle à sécuriser les données ?',o:['Oui','Non, il faut aussi valider côté serveur'],a:[1],e:'Le client peut modifier la page ou envoyer une requête directement : le serveur doit revalider.'},
-{q:'Quel élément est de type « en ligne » par défaut ?',o:['<div>','<p>','<span>','<section>'],a:[2],e:'span, a, strong sont en ligne ; div, p, section sont des blocs.'}
+{q:'Quel élément est de type « en ligne » par défaut ?',o:['<div>','<p>','<span>','<section>'],a:[2],e:'span, a, strong sont en ligne ; div, p, section sont des blocs.'},
+{q:'Quelles pratiques améliorent l\'accessibilité ?',o:['Un label relié à chaque champ','Un texte gris clair sur fond blanc','Une navigation possible au clavier','Un attribut alt descriptif'],a:[0,2,3],e:'Un contraste trop faible rend le texte illisible pour beaucoup de personnes.'},
+{q:'Le fichier index.html est dans site/, l\'image dans site/images/. Quel src écrire ?',o:['/images/dragon.jpeg','images/dragon.jpeg','../images/dragon.jpeg','C:\\site\\images\\dragon.jpeg'],a:[1],e:'Chemin relatif depuis le dossier du fichier HTML.'},
+{q:'Quelle balise relie une feuille de style externe ?',o:['<style src="styles.css">','<link rel="stylesheet" href="styles.css">','<css href="styles.css">','<script src="styles.css">'],a:[1],e:'Dans le <head>.'},
+{q:'Combien de <h1> par page est-il recommandé ?',o:['Aucun','Un seul','Un par section','Autant que nécessaire'],a:[1],e:'Le h1 est le titre principal de la page.'},
+{q:'Quelle propriété CSS change la couleur du texte ?',o:['background-color','font-color','color','text-color'],a:[2],e:'font-color et text-color n\'existent pas.'},
+{q:'Quelle valeur de position garde un élément fixe dans la fenêtre pendant le défilement ?',o:['relative','absolute','fixed','static'],a:[2],e:'sticky le colle seulement une fois atteint dans son conteneur.'}
 ],
 exos:[
 {t:'Écrire une page HTML',pts:'entraînement',q:`<p>Écrivez une page HTML5 complète avec : un en-tête contenant un titre et un menu de 3 liens, une section principale avec une image d'un dragon et un paragraphe, et un pied de page. Reliez-la à <code>styles.css</code>.</p>`,r:`

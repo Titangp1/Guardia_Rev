@@ -47,6 +47,14 @@ fiche:[
 <tr><td>Dernière sauvegarde de l'AD il y a 7 jours</td><td>En cas de panne, de ransomware ou de suppression, <b>perte jusqu'à 7 jours</b> de modifications (comptes, GPO) voire de tout l'annuaire.</td><td>Installer la fonctionnalité <b>Windows Server Backup</b>, sauvegarder l'état du système chaque jour (tâche planifiée), copie hors ligne, tester la restauration ; activer la corbeille AD.</td></tr>
 <tr><td>Mots de passe faibles</td><td>Attaques par force brute, dictionnaire ou <b>password spraying</b>.</td><td>GPO <i>Default Domain Policy</i> → Stratégie de mot de passe (longueur ≥ 12, complexité, historique, durée) + stratégie de <b>verrouillage</b> après N échecs ; ou <b>FGPP</b> (stratégie fine) plus stricte pour les admins.</td></tr></table></div>
 <p>GPO vues en projet : proxy imposé à Edge, certificat de la CA du proxy déployé dans les autorités de confiance, Panneau de configuration interdit aux utilisateurs.</p>`},
+{t:'Kerberos et l\'authentification AD',h:`
+<p><b>Kerberos</b> est le protocole d'authentification d'Active Directory (port 88). Le mot de passe ne circule jamais sur le réseau : on échange des <b>tickets</b> délivrés par le <b>KDC</b> (Key Distribution Center), qui tourne sur le contrôleur de domaine.</p>
+<ol><li>À l'ouverture de session, le client prouve qu'il connaît le mot de passe (horodatage chiffré) et reçoit un <b>TGT</b> (Ticket Granting Ticket), valable environ 10 h.</li>
+<li>Pour accéder à un service (partage, proxy Squid…), il présente son TGT au KDC et reçoit un <b>ticket de service (TGS)</b> pour ce service précis, identifié par son <b>SPN</b> (ex. <code>HTTP/srv-proxy01.groupe4.internal</code>).</li>
+<li>Il présente ce ticket au service, qui le vérifie sans contacter le DC : c'est le <b>SSO</b>, on ne retape pas son mot de passe.</li></ol>
+<div class="key"><b>Conditions</b> : DNS correct (on utilise des <b>noms</b>, pas des IP : avec <code>192.168.10.20</code>, Kerberos échoue et le navigateur demande les identifiants, d'où le proxy imposé par GPO avec le nom complet) et <b>horloges synchronisées à moins de 5 minutes</b> (NTP).</div>
+<p><b>NTLM</b> : ancien protocole par défi/réponse, utilisé en secours quand Kerberos est impossible. Plus faible (Pass-the-Hash, relais NTLM) : on le restreint par GPO.</p>
+<p>Attaques à connaître : <b>Kerberoasting</b> (demander des tickets de service pour casser hors ligne le mot de passe d'un compte de service → mots de passe longs pour les comptes de service), <b>Golden Ticket</b> (forger des TGT avec la clé du compte krbtgt).</p>`},
 {t:'Squid : le proxy filtrant',h:`
 <p><b>Squid</b> est un proxy web. Fichier de configuration principal : <code>/etc/squid/squid.conf</code> (inclusions possibles dans <code>/etc/squid/conf.d/</code>). Port par défaut : <b>3128</b>. Journaux : <code>/var/log/squid/access.log</code> (requêtes) et <code>cache.log</code> (fonctionnement).</p>
 <h3>ACL et http_access</h3>
@@ -102,6 +110,22 @@ ssl_bump bump all</code></pre>
 <p><b>Règles personnalisées</b> : <code>/var/ossec/etc/rules/local_rules.xml</code>, identifiants à partir de 100000 (ex. 100200 « refus Squid »). Niveau d'alerte de 0 à 15 : plus il est haut, plus c'est grave (≥ 12 : critique).</p>
 <p><b>Agent sur OPNsense</b> : OPNsense est basé sur <b>FreeBSD</b> : on installe l'agent FreeBSD (aujourd'hui le plugin <code>os-wazuh-agent</code>) puis on le configure vers le serveur Wazuh et on l'enregistre sur le manager.</p>
 <p><b>Déployer par GPO</b> : installer l'agent MSI sur tous les postes (installation logicielle ou script de démarrage avec <code>WAZUH_MANAGER=…</code>), et activer les <b>stratégies d'audit</b> (ouvertures de session, création de processus 4688) pour que les événements existent : aucun poste ne passe entre les mailles.</p>`},
+{t:'Supervision : SNMP et Centreon',h:`
+<p>Le SIEM surveille la <b>sécurité</b> (journaux, alertes) ; la <b>supervision</b> surveille l'<b>état et la performance</b> : la machine répond-elle, le disque est-il plein, le service tourne-t-il ? Outils : <b>Centreon</b>, Nagios, Zabbix, PRTG.</p>
+<h3>États et seuils</h3>
+<p>Chaque contrôle (« service » dans Centreon) renvoie un état : <b>OK</b>, <b>WARNING</b>, <b>CRITICAL</b>, <b>UNKNOWN</b> (et UP/DOWN pour un hôte). On fixe des <b>seuils</b> : par exemple disque C: WARNING à 80 %, CRITICAL à 90 %. Un dépassement déclenche une <b>notification</b> (mail, SMS) et l'événement reste dans l'historique.</p>
+<h3>Comment on récupère les mesures</h3>
+<ul><li><b>SNMP</b> (Simple Network Management Protocol) : l'outil interroge l'agent SNMP de l'équipement sur le port <b>UDP 161</b> ; l'équipement peut aussi envoyer spontanément des alertes (<b>traps</b>) sur le port <b>UDP 162</b>. Les valeurs sont identifiées par des <b>OID</b>, décrits dans des MIB.</li>
+<li>Versions : <b>v1/v2c</b> protégées par une simple « communauté » en clair (souvent « public » : à changer !) ; <b>v3</b> ajoute authentification et chiffrement → à privilégier.</li>
+<li>Autres moyens : agents (NSClient++ pour Windows), SSH, API, <b>plugins</b> qui renvoient un code de sortie (0 = OK, 1 = WARNING, 2 = CRITICAL, 3 = UNKNOWN).</li></ul>
+<div class="tip">IA appliquée (objectif du cahier des charges) : au lieu de seuils fixes, la <b>détection d'anomalies par apprentissage</b> apprend le comportement normal (trafic, connexions) et alerte sur un écart inhabituel. Les SIEM modernes l'intègrent.</div>`},
+{t:'Administrer à distance en sécurité',h:`
+<ul><li><b>SSH</b> (port 22) pour Linux : chiffré. Préférer l'<b>authentification par clé</b> : <code>ssh-keygen -t ed25519</code> puis copie de la clé publique dans <code>~/.ssh/authorized_keys</code> du serveur. Durcir <code>/etc/ssh/sshd_config</code> : <code>PermitRootLogin no</code>, <code>PasswordAuthentication no</code>.</li>
+<li><b>RDP</b> (3389) pour Windows : jamais exposé directement sur Internet ; NLA activé ; accès via VPN ou bastion.</li>
+<li><b>Interfaces web d'administration</b> (OPNsense, Webmin 10000, Wazuh) : HTTPS, accessibles seulement depuis la zone d'administration.</li>
+<li><b>Bastion</b> : point d'entrée unique, comptes nominatifs, sessions journalisées.</li>
+<li><b>sudo</b> plutôt que root ; un compte d'administration distinct du compte de bureautique.</li></ul>
+<p>Journaux utiles sous Linux : <code>journalctl -u squid</code>, <code>/var/log/auth.log</code> (connexions SSH), <code>/var/log/syslog</code>. Sous Windows : <b>Observateur d'événements</b> ; ID à connaître : <b>4624</b> connexion réussie, <b>4625</b> échec de connexion, <b>4688</b> création de processus, <b>4720</b> compte créé, <b>4740</b> compte verrouillé.</p>`},
 {t:'IDS/IPS : Suricata',h:`
 <ul><li><b>IDS</b> (Intrusion Detection System) : <b>détecte</b> et alerte (ex. Suricata en mode IDS sur OPNsense).</li>
 <li><b>IPS</b> (Intrusion Prevention System) : détecte <b>et bloque</b> en ligne.</li></ul>
@@ -152,7 +176,15 @@ cards:[
 ['Groupe AD qui protège les administrateurs ?','<b>Protected Users</b> (pas de NTLM, pas de délégation, pas de cache, TGT 4 h).'],
 ['Contre NTLMv1/LM, quel réglage GPO ?','Niveau d\'authentification LAN Manager = « Envoyer uniquement NTLMv2, refuser LM et NTLM ».'],
 ['Ports AD à ouvrir pour un client ?','Kerberos 88, LDAP 389, RPC 135 + dynamiques, DNS 53 (+ SMB 445, NTP 123, 464, 3268).'],
-['Direction des règles OPNsense pour le trafic des clients ?','IN, sur l\'interface d\'où vient le trafic (CLT/LAN).']
+['Direction des règles OPNsense pour le trafic des clients ?','IN, sur l\'interface d\'où vient le trafic (CLT/LAN).'],
+['TGT ?','Ticket Granting Ticket : obtenu à l\'ouverture de session, il permet de demander des tickets de service sans retaper son mot de passe.'],
+['Pourquoi Kerberos exige-t-il des noms DNS et pas des IP ?','Les tickets de service sont demandés pour un nom de service (SPN) ; avec une IP, Kerberos échoue et on retombe sur NTLM ou une demande d\'identifiants.'],
+['Kerberoasting ?','Demander des tickets de service pour casser hors ligne le mot de passe d\'un compte de service.'],
+['Les 4 états d\'un contrôle de supervision ?','OK, WARNING, CRITICAL, UNKNOWN.'],
+['Ports SNMP ?','UDP 161 (requêtes), UDP 162 (traps).'],
+['Quelle version de SNMP utiliser et pourquoi ?','SNMPv3 : authentification et chiffrement (v1/v2c n\'ont qu\'une communauté en clair).'],
+['ID d\'événement Windows d\'un échec de connexion ? d\'une connexion réussie ?','4625 · 4624'],
+['Durcir SSH : 2 réglages ?','PermitRootLogin no et PasswordAuthentication no (authentification par clé).']
 ],
 quiz:[
 {q:'Qu\'est-ce qu\'un SIEM ?',o:['Un pare-feu matériel','Un système de gestion des mises à jour','Un système de collecte, de corrélation et d\'analyse de logs','Un antivirus en ligne'],a:[2],e:'Security Information and Event Management : il centralise et corrèle les journaux pour détecter les incidents.',src:'Partiel 2025'},
@@ -181,7 +213,17 @@ quiz:[
 {q:'Lesquels sont des IOC ?',o:['L\'adresse IP 2.56.57.108','Le hash SHA-256 d\'une DLL téléchargée','Le nom du domaine spoonwatch.net','Le niveau d\'alerte Wazuh'],a:[0,1,2],e:'IP, hash et domaine sont des indicateurs réutilisables pour détecter ou bloquer. Le niveau d\'alerte est une métadonnée du SIEM.'},
 {q:'Quelle est la première action face à un poste infecté par un infostealer ?',o:['Formater immédiatement','Isoler le poste du réseau','Attendre la fin de la journée','Désinstaller l\'antivirus'],a:[1],e:'Isoler stoppe la communication avec le C2 et la propagation, tout en conservant les preuves.'},
 {q:'Un IDS se distingue d\'un IPS car :',o:['Il bloque le trafic','Il détecte et alerte sans bloquer','Il chiffre le trafic','Il remplace le pare-feu'],a:[1],e:'IDS = détection, IPS = prévention (blocage en ligne).'},
-{q:'Où se trouvent les règles Wazuh personnalisées ?',o:['/etc/squid/squid.conf','/var/ossec/etc/rules/local_rules.xml','C:\\Windows\\hosts','/etc/wazuh/custom.cfg'],a:[1],e:'Les ID personnalisés commencent à 100000.'}
+{q:'Où se trouvent les règles Wazuh personnalisées ?',o:['/etc/squid/squid.conf','/var/ossec/etc/rules/local_rules.xml','C:\\Windows\\hosts','/etc/wazuh/custom.cfg'],a:[1],e:'Les ID personnalisés commencent à 100000.'},
+{q:'Qu\'obtient un utilisateur auprès du KDC à l\'ouverture de session Kerberos ?',o:['Un certificat X.509','Un TGT (Ticket Granting Ticket)','Une adresse IP','Un cookie HTTP'],a:[1],e:'Le TGT sert ensuite à obtenir des tickets de service (TGS) sans retaper le mot de passe.'},
+{q:'Un poste configuré avec le proxy 192.168.10.20 (IP) affiche une fenêtre d\'identifiants au lieu du SSO. Pourquoi ?',o:['Squid est éteint','Kerberos a besoin du nom du service (SPN), pas d\'une IP','Le port 3128 est fermé','Le certificat a expiré'],a:[1],e:'C\'est pourquoi la GPO impose le nom complet srv-proxy01.groupe4.internal.'},
+{q:'Quelles conditions sont indispensables au bon fonctionnement de Kerberos ?',o:['Une résolution DNS correcte','Des horloges synchronisées (moins de 5 minutes d\'écart)','Le protocole NTLMv1','Un accès Internet'],a:[0,1],e:'D\'où l\'importance du DNS de l\'AD et de NTP.'},
+{q:'Un disque à 92 % avec des seuils WARNING 80 % et CRITICAL 90 %. Quel état renvoie la supervision ?',o:['OK','WARNING','CRITICAL','UNKNOWN'],a:[2],e:'92 % dépasse le seuil critique de 90 %.'},
+{q:'Quel port reçoit les traps SNMP ?',o:['UDP 161','UDP 162','TCP 443','UDP 514'],a:[1],e:'161 : interrogation de l\'agent ; 162 : alertes envoyées par l\'équipement.'},
+{q:'Pourquoi préférer SNMPv3 à SNMPv2c ?',o:['Il est plus rapide','Il apporte authentification et chiffrement','Il utilise TCP','Il n\'a pas besoin d\'agent'],a:[1],e:'En v2c, la communauté circule en clair.'},
+{q:'Quel ID d\'événement Windows signale un échec d\'ouverture de session ?',o:['4624','4625','4688','4720'],a:[1],e:'4624 réussite, 4688 création de processus, 4720 compte créé.'},
+{q:'Quelles mesures durcissent l\'accès SSH à un serveur Linux ?',o:['Authentification par clé','PermitRootLogin no','Exposer le port 22 sur Internet','PasswordAuthentication no'],a:[0,1,3],e:'Et passer par la zone d\'administration ou un bastion.'},
+{q:'Quelle différence entre supervision (Centreon) et SIEM (Wazuh) ?',o:['Aucune','La supervision surveille l\'état et les performances ; le SIEM collecte et corrèle les journaux de sécurité','Le SIEM remplace le pare-feu','La supervision chiffre les logs'],a:[1],e:'Les deux sont complémentaires.'},
+{q:'Dans Squid, quelle directive permet de NE PAS déchiffrer les sites bancaires ?',o:['ssl_bump bump banques','ssl_bump splice banques','http_access deny banques','cache deny banques'],a:[1],e:'splice laisse passer le tunnel TLS sans l\'ouvrir.'}
 ],
 exos:[
 {t:'Analyse de configuration Squid',src:'ancien partiel',pts:'4 × 1 pt',q:`<p>À partir du fichier <code>squid.conf</code> fourni (acl localnet …, acl SSL_ports port 443, acl Safe_ports port 80 21 443 70 210 1025-65535 280 488 591 777, http_access deny !Safe_ports, http_access deny CONNECT !SSL_ports, http_access allow localnet, http_access allow localhost, http_access deny all, http_port 3128) :</p><ol><li>Quels réseaux sont autorisés à accéder au proxy ?</li><li>Quelle est la différence entre Safe_ports et SSL_ports ? Donnez un exemple d'usage.</li><li>Expliquez la ligne <code>http_access deny CONNECT !SSL_ports</code>.</li><li>Quel est le rôle du bloc ssl_bump ? Expliquez brièvement le processus d'inspection HTTPS.</li></ol>`,r:`
@@ -245,6 +287,17 @@ http_access deny all</code></pre>
 <li>Comportement : User-Agent <code>Mozilla/5.0 (compatible; wget/1.20.3)</code> lancé par powershell.exe ; fichier .jpg commençant par MZ.</li></ul>
 <p><b>3. Remédiation</b> : isoler WIN-CLT du réseau ; bloquer 2.56.57.108 et spoonwatch.net sur le pare-feu, le DNS et le proxy ; réinitialiser tous les mots de passe de steve.smith (et ceux enregistrés dans son navigateur), révoquer les sessions, activer la MFA ; rechercher les IOC sur les autres machines dans Wazuh ; réinstaller le poste depuis une image saine ; sensibiliser l'utilisateur ; bloquer l'exécution depuis %TEMP% (AppLocker par GPO).</p>
 <p><b>4. ossec.conf</b> : fichier de configuration de l'agent/manager Wazuh. Il définit les sources de logs surveillées (blocs <code>&lt;localfile&gt;</code>), l'adresse du manager, la surveillance d'intégrité (syscheck), le rootcheck et les réponses actives : c'est lui qui permet d'ajouter des journaux personnalisés à analyser (ex. access.log de Squid).</p>
-<p><b>5. GPO</b> : déployer automatiquement l'agent Wazuh sur tous les postes du domaine (installation MSI avec l'adresse du manager), garantir que le service reste actif, et activer les stratégies d'audit (connexions, création de processus, PowerShell) pour que Windows produise les événements que Wazuh analyse. Aucun poste n'échappe à la supervision, et la configuration est homogène.</p>`}
+<p><b>5. GPO</b> : déployer automatiquement l'agent Wazuh sur tous les postes du domaine (installation MSI avec l'adresse du manager), garantir que le service reste actif, et activer les stratégies d'audit (connexions, création de processus, PowerShell) pour que Windows produise les événements que Wazuh analyse. Aucun poste n'échappe à la supervision, et la configuration est homogène.</p>`},
+{t:'Expliquer le SSO Kerberos du proxy',pts:'entraînement',q:`<p>Dans le projet 2, j.martin ouvre sa session Windows puis navigue sans qu'aucune fenêtre d'identifiants n'apparaisse, alors que Squid exige une authentification. Expliquez le mécanisme et deux raisons pour lesquelles une fenêtre d'identifiants pourrait apparaître.</p>`,r:`
+<p><b>Mécanisme</b> : à l'ouverture de session, le KDC (SRV-AD01) remet à j.martin un <b>TGT</b>. Quand Edge contacte <code>srv-proxy01.groupe4.internal:3128</code>, Squid répond 407 (authentification requise) en proposant Negotiate. Le poste demande alors au KDC un <b>ticket de service</b> pour le SPN <code>HTTP/srv-proxy01.groupe4.internal</code> et l'envoie au proxy. Squid le valide grâce à sa keytab : l'utilisateur est identifié sans saisir son mot de passe. Squid vérifie ensuite par LDAP l'appartenance au groupe <b>GG-Internet</b> (sinon 403).</p>
+<p><b>Fenêtre d'identifiants si</b> : le proxy est configuré par son <b>IP</b> au lieu de son nom (pas de SPN → pas de ticket) ; l'<b>heure</b> du poste ou du proxy est décalée de plus de 5 minutes ; le DNS ne résout pas le nom ; la keytab ou le SPN sont mal créés ; le poste n'est pas membre du domaine.</p>`},
+{t:'Concevoir la supervision d\'un serveur',pts:'entraînement',q:`<p>Proposez cinq contrôles de supervision pour SRV-AD01 avec leurs seuils, et indiquez comment l'outil récupère les mesures.</p>`,r:`
+<div class="tbl"><table><tr><th>Contrôle</th><th>WARNING</th><th>CRITICAL</th></tr>
+<tr><td>Hôte joignable (ping)</td><td>perte &gt; 20 % ou &gt; 100 ms</td><td>perte 100 %</td></tr>
+<tr><td>CPU</td><td>80 % sur 5 min</td><td>95 % sur 5 min</td></tr>
+<tr><td>Espace disque C:</td><td>80 %</td><td>90 %</td></tr>
+<tr><td>Services AD DS, DNS, DHCP, Netlogon</td><td>—</td><td>service arrêté</td></tr>
+<tr><td>Échecs de connexion (4625)</td><td>&gt; 20 / 5 min</td><td>&gt; 100 / 5 min (force brute)</td></tr></table></div>
+<p>Collecte : agent (NSClient++) ou <b>SNMPv3</b> sur UDP 161 pour CPU/disque/services ; ping ICMP ; les événements de sécurité remontent plutôt par l'agent Wazuh. Chaque état CRITICAL déclenche une notification à l'équipe.</p>`}
 ]
 });
