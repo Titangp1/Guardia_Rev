@@ -6,7 +6,7 @@
 
 <p>
 <a href="https://titangp1.github.io/Guardia_Rev/"><img src="https://img.shields.io/badge/Ouvrir_le_site-1d6fd1?style=flat-square&logo=githubpages&logoColor=white" alt="Ouvrir le site"></a>
-<img src="https://img.shields.io/badge/version-4.0.0-1f2937?style=flat-square" alt="Version 4.0.0">
+<img src="https://img.shields.io/badge/version-5.0.0-1f2937?style=flat-square" alt="Version 5.0.0">
 <img src="https://img.shields.io/badge/acc%C3%A8s-%40guardiaschool.fr-a77d2f?style=flat-square" alt="Accès @guardiaschool.fr">
 </p>
 
@@ -23,11 +23,12 @@ Au lancement, le site demande **obligatoirement** de se connecter ou de créer u
 | Introduction ISR | 12 | 41 | 37 | 7 |
 | Administration, sécurisation & supervision ISR | 11 | 37 | 36 | 8 |
 | Fondamentaux de la cybersécurité | 9 | 20 | 29 | 2 |
-| Programmation & DevSecOps | 11 | 42 | 39 | 6 |
+| Programmation & DevSecOps | 12 | 49 | 49 | 6 |
 | HTML & CSS | 7 | 24 | 25 | 2 |
 | Analyse de menace & gestion d'incident | 8 | 18 | 21 | 2 |
 | Anglais cyber | 5 | 23 | 37 | 2 |
-| **Total** | **63** | **205** | **224** | **29** |
+| JavaScript & API | 12 | 38 | 37 | 6 |
+| **Total** | **76** | **250** | **271** | **35** |
 
 Les questions et exercices tirés des anciens sujets sont marqués « Partiel 2025 » ou « ancien partiel ».
 
@@ -79,7 +80,7 @@ puis ouvrir <http://localhost:8000>. Pour tester sans compte Firebase : <http://
 Guardia_Rev/
 ├── index.html            tableau de bord
 ├── connexion.html        connexion et inscription (seule page accessible sans compte)
-├── matieres.html         les 7 matières et la progression
+├── matieres.html         les 8 matières et la progression
 ├── cours.html ?m=…       cours d'une matière (#s3 pour aller à la section 3)
 ├── qcm.html ?m=…         QCM d'une matière
 ├── cartes.html ?m=…      cartes à répétition espacée
@@ -93,7 +94,8 @@ Guardia_Rev/
 ├── joueur.html ?id=…     profil public d'un étudiant
 ├── profil.html           mon profil, photo, badges, réglages
 ├── assets/
-│   ├── style.css         design (clair par défaut, sombre selon le système)
+│   ├── style.css         mise en page et composants
+│   ├── theme.css         thème Guardia v5 (bleu nuit, cyan, or ; clair et sombre)
 │   ├── app.js            code commun à toutes les pages (connexion, navigation, QCM, cartes, défis…)
 │   ├── config.js         domaine autorisé, adresses bannies (empreintes) et configuration Firebase
 │   └── data/             une fiche par matière (cours, cartes, QCM, exercices)
@@ -109,4 +111,4 @@ Pour ajouter du contenu : éditer le fichier de la matière dans `assets/data/`.
 
 Icônes [Lucide](https://lucide.dev) (licence ISC). Polices Inter et JetBrains Mono (Google Fonts). Choix de design guidés par les skills ui-ux-pro-max, no-ai-design-slop et beautiful-shadows.
 
-<div align="center"><sub>Guardia_Rev · v4.0.0 · Titan_gp1</sub></div>
+<div align="center"><sub>Guardia_Rev · v5.0.0 · Titan_gp1</sub></div>

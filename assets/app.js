@@ -3,10 +3,10 @@
    recherche et partiel blanc. Réalisé par Titan_gp1. */
 (function(){
 'use strict';
-const VERSION='4.1.0';
+const VERSION='5.0.0';
 const CFG=window.GR_CONFIG||{};
 const DOMAIN=(CFG.domain||'guardiaschool.fr').toLowerCase();
-const META={isr:['server','#2563eb'],supervision:['activity','#d97706'],fondamentaux:['lock','#0d9488'],devsecops:['terminal','#16a34a'],web:['code','#ea580c'],incident:['alert','#7c3aed'],anglais:['languages','#db2777']};
+const META={isr:['server','#2563eb'],supervision:['activity','#d97706'],fondamentaux:['lock','#0d9488'],devsecops:['terminal','#16a34a'],web:['code','#ea580c'],incident:['alert','#7c3aed'],anglais:['languages','#db2777'],js:['plug','#ca8a04']};
 const SUBJECTS=(window.GR&&window.GR.subjects)||[];
 SUBJECTS.forEach(s=>{s.fiche=s.fiche||[];s.cards=s.cards||[];s.exos=s.exos||[];
   const m=META[s.id]||['book','#475569'];s.ic=m[0];s.col=m[1];
@@ -312,7 +312,7 @@ function msgBlock(){const m=S.authMsg;return `<div class="msg ${m?m.k:''}" id="a
 function showMsg(k,t){S.authMsg={k,t};const m=$('#authMsg');if(m){m.className='msg '+k;m.textContent=t;m.hidden=false}else renderAuth()}
 function authArt(){return `<aside class="auth-art" aria-hidden="true"><div class="brand" style="color:#fff"><span class="brand-mark" style="background:rgba(255,255,255,.16)">${LOGO}</span><span><b>Guardia_Rev</b><small style="color:rgba(255,255,255,.75)">GCS1 · Guardia Cybersecurity School</small></span></div>
   <div style="display:grid;gap:16px"><h2>Révisez. Progressez. Défiez votre promo.</h2><p>Cours, QCM corrigés et anciens partiels, cartes à répétition espacée, XP, classement et duels entre étudiants.</p></div>
-  <ul><li><span class="ic">${ic('bookOpen')}</span>7 matières, plus de 200 questions de QCM</li><li><span class="ic">${ic('trophy')}</span>XP, niveaux, badges et classement de la promo</li><li><span class="ic">${ic('swords')}</span>Défiez un camarade sur les mêmes questions</li></ul></aside>`}
+  <ul><li><span class="ic">${ic('bookOpen')}</span>8 matières, plus de 250 questions de QCM</li><li><span class="ic">${ic('trophy')}</span>XP, niveaux, badges et classement de la promo</li><li><span class="ic">${ic('swords')}</span>Défiez un camarade sur les mêmes questions</li></ul></aside>`}
 function renderAuth(){
   const v=S.authView,demo=S.api.mode==='local';
   if(S.user&&!S.user.verified){

@@ -261,7 +261,56 @@ jobs:
         with:
           username: \${{ secrets.DOCKERHUB_USERNAME }}
           password: \${{ secrets.DOCKERHUB_TOKEN }}</code></pre>
-<div class="key">Les identifiants sont stockés dans les <b>secrets GitHub</b> (Settings › Secrets and variables › Actions) et lus avec <code>\${{ secrets.NOM }}</code> : <b>jamais en clair</b> dans le code ou le YAML.</div>`}
+<div class="key">Les identifiants sont stockés dans les <b>secrets GitHub</b> (Settings › Secrets and variables › Actions) et lus avec <code>\${{ secrets.NOM }}</code> : <b>jamais en clair</b> dans le code ou le YAML.</div>`},
+{t:'Cahier des charges : ce qui est attendu et noté',h:`
+<p>Module « Introduction à la programmation &amp; DevSecOps » (UE DevSecOps, 1 ECTS, GCS1, semaine du 9 au 13 novembre), groupes de <b>4 étudiants</b>, projet fil rouge poursuivi sur <b>trois modules</b>, versionné sur GitHub. Le travail fait avec une IA générative doit être <b>déclaré et vérifié</b> : il reste sous votre responsabilité.</p>
+<h3>Travaux préparatoires (QCM du jour 1)</h3>
+<div class="tbl"><table><tr><th>Domaine</th><th>Notions à connaître (sans maîtrise avancée)</th></tr>
+<tr><td>Python</td><td>variables, types simples, conditions, boucles, fonctions, listes et dictionnaires</td></tr>
+<tr><td>Git</td><td>dépôt, clone, commit, push, pull</td></tr>
+<tr><td>Web</td><td>client/serveur, HTTP, GET / POST, JSON, API REST</td></tr>
+<tr><td>Linux / terminal</td><td>navigation dans l'arborescence, fichiers et répertoires, commandes de base, permissions</td></tr></table></div>
+<p>Matériel : Python 3, Git, un compte GitHub, un éditeur de code, un terminal fonctionnel.</p>
+<h3>La semaine, jour par jour</h3>
+<div class="tbl"><table><tr><th>Jalon</th><th>Livrable</th><th>Contenu</th></tr>
+<tr><td>QCM (09/11)</td><td>Travaux préparatoires</td><td>questionnaire noté</td></tr>
+<tr><td>Jour 1 · Comprendre (09/11)</td><td>Environnement Python / Git fonctionnel</td><td>projet, Dev/Ops/DevOps/DevSecOps, roadmap des 7 semaines, rappels Python, HTTP, API REST, JSON</td></tr>
+<tr><td>Jour 2 · Programmer (10/11)</td><td>Première fonctionnalité Python utilisant une API</td><td>construction progressive, consommation d'une API externe, traitement des données</td></tr>
+<tr><td>Jour 3 · Versionner (12/11)</td><td>Dépôt GitHub avec commits structurés</td><td>création du dépôt, commits, branches, travail collaboratif</td></tr>
+<tr><td>Jour 4 · Intégrer (13/11)</td><td>Première version fonctionnelle, bilan</td><td>intégration au fil rouge, documentation, présentation, suite du projet</td></tr></table></div>
+<h3>Attendus techniques minimaux du projet final</h3>
+<ul><li><b>Back-end Python</b> (Flask ou équivalent) exposant une API REST avec au moins <b>1 GET, 1 POST, 1 PUT/PATCH, 1 DELETE</b> ; données en JSON ou dans une base de données (plus technique, plus propre).</li>
+<li><b>Git</b> : commits réguliers (à chaque fonctionnalité ou correction), branches <code>main</code> et <code>develop</code>, <b>pull requests develop → main</b>.</li>
+<li><b>Docker</b> : application conteneurisée, accessible en <code>localhost</code> sur le port de votre choix, <b>données persistantes</b> (volume).</li>
+<li><b>CI/CD GitHub Actions</b> : au moins <b>3 contrôles qualité</b> (formatage, linting, tests unitaires) et <b>2 contrôles sécurité</b> (SAST, SCA) ; image <b>construite automatiquement</b> et <b>poussée sur Docker Hub</b>.</li>
+<li><b>Secrets</b> : dans les secrets GitHub, <b>jamais en clair</b> dans le code ou le YAML.</li></ul>
+<div class="trap">Sujet libre : mêmes attendus, mais le cahier des charges demande alors <b>3</b> contrôles de sécurité (et 3 de qualité).</div>
+<h3>Les sujets</h3>
+<p><b>Tamagochi</b> : un animal avec faim, énergie, humeur et état (vivant / mort). <code>POST /pet</code> (créer), <code>GET /pet</code> (état), <code>POST /pet/feed</code>, <code>/pet/play</code>, <code>/pet/sleep</code>, <code>PUT</code> ou <code>PATCH /pet</code> (ex. renommer), <code>DELETE /pet</code>. Règles : valeurs cohérentes (bornées), l'animal peut mourir, une fois mort certaines actions sont refusées. Bonus : gestion du temps, historique, messages d'erreur détaillés.</p>
+<p><b>Tavernier RPG</b> : des quêtes avec nom, description, récompense et statut (disponible, en cours, terminée). <code>POST /quests</code>, <code>GET /quests</code>, <code>GET /quests/{id}</code>, <code>PUT/PATCH /quests/{id}</code> (terminer, augmenter la récompense…), <code>DELETE /quests/{id}</code>. Règles : une quête doit être <b>acceptée avant d'être terminée</b>, une quête <b>terminée n'est plus modifiable</b>, statuts cohérents. Bonus : aventuriers, attribution, historique, récompenses qui évoluent avec le temps.</p>
+<h3>La boucle DevOps attendue (version simplifiée)</h3>
+<div class="tbl"><table><tr><th>Étape</th><th>Ce que le jury regarde</th></tr>
+<tr><td>Plan</td><td>organisation, découpage des tâches (GitHub Projects, Trello : la réflexion compte plus que l'outil)</td></tr>
+<tr><td>Code</td><td>code Python sur GitHub, structure claire, Flask ou équivalent</td></tr>
+<tr><td>Build</td><td>pipeline qui installe les dépendances et construit ; comprendre le rôle du build</td></tr>
+<tr><td>Test</td><td>tests automatisés dans la CI, même simples ; expliquer ce qui est testé et pourquoi</td></tr>
+<tr><td>Release</td><td>commits réguliers, messages compréhensibles</td></tr>
+<tr><td>Deploy</td><td>application exécutable, conteneurisée, instructions dans le README</td></tr>
+<tr><td>Operate</td><td>application fonctionnelle, démonstration simple (navigateur, logs)</td></tr>
+<tr><td>Monitor</td><td>pas de vraie supervision : expliquer comment vérifier que ça marche et ce qu'on surveillerait en vrai</td></tr></table></div>
+<h3>README.md obligatoire</h3>
+<p>Présentation du projet · fonctionnement global · instructions de lancement · problèmes rencontrés · solutions ou contournements · améliorations possibles (boucle suivante).</p>
+<h3>Grille d'évaluation</h3>
+<div class="tbl"><table><tr><th>Critère</th><th>Poids</th></tr>
+<tr><td>QCM travaux préparatoires</td><td>10 %</td></tr>
+<tr><td>Fonctionnalités API / CRUD</td><td>20 %</td></tr>
+<tr><td>Démarche DevOps (Plan → Release)</td><td>20 %</td></tr>
+<tr><td>Qualité &amp; tests</td><td>20 %</td></tr>
+<tr><td>Déploiement, exploitation, monitoring</td><td>10 %</td></tr>
+<tr><td>Documentation &amp; recul</td><td>10 %</td></tr>
+<tr><td>Présentation / restitution</td><td>10 %</td></tr>
+<tr><td>Bonus (amélioration pertinente et justifiée)</td><td>jusqu'à +10 %</td></tr></table></div>
+<div class="key">Le projet n'attend <b>pas</b> une infrastructure professionnelle. Bugs, blocages et limites sont normaux : savoir <b>expliquer un problème</b>, la tentative de résolution et la piste d'amélioration est valorisé, même si ce n'est pas résolu.</div>`}
 ],
 cards:[
 ['Résultat de <code>7 // 2</code> et <code>7 % 2</code> ?','<code>3</code> (division entière) et <code>1</code> (reste).'],
@@ -302,7 +351,17 @@ cards:[
 ['Mode "w" vs "a" de open() ?','"w" écrase le fichier ; "a" ajoute à la fin.'],
 ['À quoi sert un environnement virtuel (venv) ?','Isoler les dépendances d\'un projet ; on le crée avec <code>python -m venv venv</code>.'],
 ['Où mettre une clé d\'API dans un projet Python ?','Dans une variable d\'environnement (os.getenv), jamais dans le code ni dans Git.'],
-['Pourquoi ne jamais utiliser eval() sur une entrée utilisateur ?','Elle exécute n\'importe quel code Python : exécution de code arbitraire.']
+['Pourquoi ne jamais utiliser eval() sur une entrée utilisateur ?','Elle exécute n\'importe quel code Python : exécution de code arbitraire.'],
+['Méthodes HTTP minimales du projet final ?','Au moins 1 GET, 1 POST, 1 PUT ou PATCH et 1 DELETE (API CRUD).'],
+['Branches et flux Git exigés par le cahier des charges ?','<code>main</code> et <code>develop</code>, avec des pull requests develop → main.'],
+['Contrôles minimum dans la CI du projet ?','3 contrôles qualité (formatage, linting, tests) et 2 contrôles sécurité (SAST, SCA) ; 3 en sujet libre.'],
+['Où doit finir l\'image Docker construite par la CI ?','Poussée automatiquement sur Docker Hub (identifiants dans les secrets GitHub).'],
+['Les 6 rubriques minimales du README ?','Présentation, fonctionnement global, lancement, problèmes rencontrés, solutions/contournements, améliorations possibles.'],
+['Tavernier : deux règles de gestion des statuts ?','Une quête doit être acceptée avant d\'être terminée ; une quête terminée n\'est plus modifiable.'],
+['Tamagochi : les 4 caractéristiques de l\'animal ?','Faim, énergie, humeur, état (vivant ou mort).'],
+['Poids du QCM des travaux préparatoires ?','10 % de la note ; le projet compte pour 90 %.'],
+['Monitor « débutant » : qu\'attend-on ?','Pas de vraie supervision : expliquer comment vérifier que l\'appli marche et ce qu\'on surveillerait en conditions réelles.'],
+['IA générative dans le projet : la règle ?','L\'utiliser est permis mais doit être déclaré et vérifié ; le code produit reste sous votre responsabilité.']
 ],
 quiz:[
 {q:'Que affiche ce code ?',code:'x = 7\ny = 2\nprint(x // y, x % y)',o:['3.5 1','3 1','3 0','4 1'],a:[1],e:'// est la division entière (3), % le reste (1).'},
@@ -346,7 +405,14 @@ quiz:[
 {q:'Quelle commande crée un environnement virtuel Python nommé venv ?',o:['pip install venv','python -m venv venv','git init venv','docker run venv'],a:[1],e:'On l\'active ensuite, puis pip install -r requirements.txt.'},
 {q:'Dans un test pytest, que provoque un assert dont la condition est fausse ?',o:['Rien','L\'échec du test','La suppression du fichier','Un commit'],a:[1],e:'pytest affiche alors la valeur obtenue et la valeur attendue.'},
 {q:'Lesquelles sont de mauvaises pratiques de sécurité dans une API Python ?',o:['app.run(debug=True) en production','Clé d\'API écrite dans le code source','Requêtes SQL paramétrées','eval() sur un champ envoyé par l\'utilisateur'],a:[0,1,3],e:'Les requêtes paramétrées sont la bonne pratique contre l\'injection SQL.'},
-{q:'Que fait random.randint(1, 10) ?',o:['Un entier de 1 à 9','Un entier de 1 à 10','Un décimal entre 1 et 10','Une liste de 10 nombres'],a:[1],e:'Les deux bornes sont incluses, contrairement à range.'}
+{q:'Que fait random.randint(1, 10) ?',o:['Un entier de 1 à 9','Un entier de 1 à 10','Un décimal entre 1 et 10','Une liste de 10 nombres'],a:[1],e:'Les deux bornes sont incluses, contrairement à range.'},
+{q:'Selon le cahier des charges, combien de contrôles de sécurité minimum dans la CI (sujets Tamagochi / Tavernier) ?',o:['1','2','3','5'],a:[1],e:'2 contrôles de sécurité (ex. SAST, SCA) et 3 contrôles qualité ; 3 de chaque en sujet libre.',src:'cahier des charges'},
+{q:'Quel flux Git est exigé ?',o:['Tout sur main','Branches main et develop, pull requests develop → main','Une branche par étudiant, sans PR','Pas de branche, des tags'],a:[1],e:'Gestion minimale des branches : main, develop et PR de develop vers main.',src:'cahier des charges'},
+{q:'Tavernier : une quête « disponible » reçoit une demande pour passer à « terminée ». Que doit faire l\'API ?',o:['Accepter','Refuser : elle doit d\'abord être acceptée (en cours)','Supprimer la quête','Renvoyer 500'],a:[1],e:'Règle : acceptée avant d\'être terminée. Réponse 400/409 avec un message clair.',src:'cahier des charges'},
+{q:'Quelles exigences Docker figurent au cahier des charges ? (plusieurs réponses)',o:['Accessible en localhost','Port imposé : 80','Données persistantes','Image poussée sur Docker Hub par la CI'],a:[0,2,3],e:'Le port est au choix ; les données doivent survivre au conteneur (volume).',src:'cahier des charges'},
+{q:'Quel critère pèse le plus dans la note du projet ?',o:['Documentation & recul (10 %)','Déploiement (10 %)','Fonctionnalités API, Démarche DevOps et Qualité & tests (20 % chacun)','Présentation (10 %)'],a:[2],e:'Trois blocs à 20 %, puis déploiement, documentation et présentation à 10 %, QCM 10 %.',src:'cahier des charges'},
+{q:'Où stocker le token Docker Hub utilisé par GitHub Actions ?',o:['Dans le Dockerfile','Dans ci.yml','Dans les secrets GitHub (Settings › Secrets and variables › Actions)','Dans le README'],a:[2],e:'Jamais en clair dans le code ni dans les fichiers YAML.',src:'cahier des charges'},
+{q:'Un bug n\'a pas pu être corrigé avant la soutenance. Que conseille le cahier des charges ?',o:['Le cacher','L\'expliquer : problème, tentatives, piste d\'amélioration (c\'est valorisé)','Supprimer la fonctionnalité du dépôt','Changer de sujet'],a:[1],e:'Bugs et blocages sont « normaux et attendus » : savoir les expliquer compte.',src:'cahier des charges'}
 ],
 exos:[
 {t:'Écrire une fonction Python',pts:'entraînement',q:`<p>Écrivez une fonction <code>nourrir(pet)</code> pour le Tamagochi : <code>pet</code> est un dictionnaire <code>{"faim": 70, "energie": 40, "humeur": 50, "vivant": True}</code>. Nourrir réduit la faim de 30 et augmente l'énergie et l'humeur de 10. Les valeurs restent entre 0 et 100. Si l'animal est mort, la fonction lève une erreur.</p>`,r:`

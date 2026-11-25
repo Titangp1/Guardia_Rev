@@ -6,15 +6,15 @@ et la présence des données de cours changent. Usage, depuis la racine du dép�
 """
 from pathlib import Path
 
-VERSION = "4.1.0"
+VERSION = "5.0.0"
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ["isr", "supervision", "fondamentaux", "devsecops", "web", "incident", "anglais"]
+DATA = ["isr", "supervision", "fondamentaux", "devsecops", "web", "incident", "anglais", "js"]
 
 # fichier, identifiant de page, titre, description, charge les données de cours ?
 PAGES = [
     ("index.html", "accueil", "Tableau de bord", "Votre progression, vos révisions du jour et vos défis.", True),
     ("connexion.html", "connexion", "Connexion", "Connexion réservée aux étudiants Guardia (@guardiaschool.fr).", False),
-    ("matieres.html", "matieres", "Matières", "Les sept matières des premiers partiels de GCS1.", True),
+    ("matieres.html", "matieres", "Matières", "Les huit matières des premiers partiels de GCS1.", True),
     ("cours.html", "cours", "Cours", "Fiche de cours de la matière.", True),
     ("qcm.html", "qcm", "QCM", "QCM corrigés de la matière.", True),
     ("cartes.html", "cartes", "Cartes", "Cartes de révision à répétition espacée.", True),
@@ -30,7 +30,7 @@ PAGES = [
 ]
 
 ICON = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' "
-        "fill='%232563eb'/%3E%3Cpath d='M44 22a15 15 0 1 0 3 12H32' fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E")
+        "fill='%230e7490'/%3E%3Cpath d='M44 22a15 15 0 1 0 3 12H32' fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E")
 
 TEMPLATE = """<!doctype html>
 <html lang="fr">
@@ -42,10 +42,11 @@ TEMPLATE = """<!doctype html>
 <meta name="author" content="Titan_gp1">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#050a13" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="{icon}">
 <script>(function(){{try{{var t=localStorage.getItem('gr-theme');if(t)document.documentElement.dataset.theme=t}}catch(e){{}}}})();</script>
 <link rel="stylesheet" href="assets/style.css?v={v}">
+<link rel="stylesheet" href="assets/theme.css?v={v}">
 </head>
 <body data-page="{page}">
 <div id="root"><div class="loading"><div class="spin" role="status" aria-label="Chargement"></div></div></div>
