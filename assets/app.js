@@ -3,7 +3,7 @@
    recherche et partiel blanc. Réalisé par Titan_gp1. */
 (function(){
 'use strict';
-const VERSION='5.0.0';
+const VERSION='6.0.0';
 const CFG=window.GR_CONFIG||{};
 const DOMAIN=(CFG.domain||'guardiaschool.fr').toLowerCase();
 const META={isr:['server','#2563eb'],supervision:['activity','#d97706'],fondamentaux:['lock','#0d9488'],devsecops:['terminal','#16a34a'],web:['code','#ea580c'],incident:['alert','#7c3aed'],anglais:['languages','#db2777'],js:['plug','#ca8a04']};
@@ -384,7 +384,7 @@ function layout(inner,r){
   const inSubj=PAGE==='matieres'||SUBJECT_PAGES.includes(PAGE);
   const bn=[['accueil','index.html','home','Accueil',0,PAGE==='accueil'],['revisions','revisions.html','clock','Réviser',due+wrong,PAGE==='revisions'],['matieres','matieres.html','bookOpen','Matières',0,inSubj],['defis','defis.html','swords','Défis',inc,PAGE==='defis']];
   return `<a class="skip" href="#main" id="skip">Aller au contenu</a><div class="app ${S.menu?'open':''} ${focus?'focus':''}" id="app">
-    <header class="mtop"><button class="btn ghost icon" id="menuBtn" aria-label="Ouvrir le menu" aria-controls="side" aria-expanded="${S.menu}">${ic('menu')}</button><a class="brand" href="index.html"><span class="brand-mark">${LOGO}</span><b>Guardia_Rev</b></a><button class="btn ghost icon" data-search aria-label="Rechercher">${ic('search')}</button><a href="profil.html" aria-label="Mon profil">${avatar(me,32)}</a></header>
+    <header class="mtop"><div class="mtop-l"><button class="circ" data-search aria-label="Rechercher" title="Rechercher (Ctrl K)">${ic('search','sm')}</button><button class="circ" id="themeT" aria-label="${isDark()?'Passer en thème clair':'Passer en thème sombre'}" title="Changer de thème">${ic(isDark()?'sun':'moon','sm')}</button></div><a class="brand" href="index.html"><span class="brand-mark">${LOGO}</span><b>Guardia_Rev</b></a><div class="mtop-r"><a class="circ av-link" href="profil.html" aria-label="Mon profil">${avatar(me,30)}</a><button class="menu-pill" id="menuBtn" aria-label="${S.menu?'Fermer le menu':'Ouvrir le menu'}" aria-controls="side" aria-expanded="${S.menu}"><span class="mp-t">${S.menu?'Fermer':'Menu'}</span><span class="mp-d" aria-hidden="true"><i></i></span></button></div></header>
     <aside class="side" id="side" aria-label="Navigation">
       <a class="brand" href="index.html"><span class="brand-mark">${LOGO}</span><span><b>Guardia_Rev</b><small>Révisions · GCS1</small></span></a>
       <a class="me" href="profil.html" ${PAGE==='profil'?'aria-current="page"':''}><div class="row">${ringAv(me,40)}<div style="min-width:0"><b>${esc(me.pseudo)}</b><span class="t">Niveau ${L.n} · ${esc(L.title)}</span></div></div>
@@ -426,7 +426,7 @@ function render(){
   }catch(e){console.error(e);html=notFound()}
   root.innerHTML=layout(html,r);
   if(S.title)document.title=S.title+' · Guardia_Rev';
-  $('#themeB').onclick=()=>{toggleTheme();render()};
+  $('#themeB').onclick=$('#themeT').onclick=()=>{toggleTheme();render()};
   $('#menuBtn').onclick=$('#bMenu').onclick=()=>{S.menu=!S.menu;render();if(S.menu){const a=$('.side .nav a');if(a)a.focus()}};
   $('#skip').onclick=e=>{e.preventDefault();$('#main').focus()};
   $('#sideOut').onclick=async()=>{QZ=null;FC=null;S.loggingOut=true;await S.api.signOut()};
