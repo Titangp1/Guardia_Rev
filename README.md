@@ -6,7 +6,7 @@
 
 <p>
 <a href="https://titangp1.github.io/Guardia_Rev/"><img src="https://img.shields.io/badge/Ouvrir_le_site-1d6fd1?style=flat-square&logo=githubpages&logoColor=white" alt="Ouvrir le site"></a>
-<img src="https://img.shields.io/badge/version-4.3.0-1f2937?style=flat-square" alt="Version 4.3.0">
+<img src="https://img.shields.io/badge/version-4.0.0-1f2937?style=flat-square" alt="Version 4.0.0">
 <img src="https://img.shields.io/badge/acc%C3%A8s-%40guardiaschool.fr-a77d2f?style=flat-square" alt="Accès @guardiaschool.fr">
 </p>
 
