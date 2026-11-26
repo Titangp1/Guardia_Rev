@@ -6,8 +6,9 @@ et la présence des données de cours changent. Usage, depuis la racine du dép�
 """
 from pathlib import Path
 
-VERSION = "7.1.0"
+VERSION = "7.2.0"
 ROOT = Path(__file__).resolve().parent.parent
+SITE = "https://guardiarev.space"
 DATA = ["isr", "supervision", "fondamentaux", "devsecops", "web", "incident", "anglais", "js", "agenda"]
 
 # fichier, identifiant de page, titre, description, charge les données de cours ?
@@ -42,9 +43,26 @@ TEMPLATE = """<!doctype html>
 <meta name="description" content="{desc}">
 <meta name="author" content="Titan_gp1">
 <meta name="robots" content="noindex">
+<meta name="theme-color" content="#12203a">
 <meta name="theme-color" content="#f4eee3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b1322" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="{icon}">
+<link rel="icon" href="assets/logo.svg?v={v}" type="image/svg+xml">
+<link rel="icon" href="assets/icon-180.png?v={v}" type="image/png" sizes="180x180">
+<link rel="apple-touch-icon" href="assets/icon-180.png?v={v}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Guardia_Rev">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="{ogtitle}">
+<meta property="og:description" content="{ogdesc}">
+<meta property="og:url" content="{site}/{file}">
+<meta property="og:image" content="{site}/assets/og.png?v={v}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Guardia_Rev, révisions des partiels GCS1">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{ogtitle}">
+<meta name="twitter:description" content="{ogdesc}">
+<meta name="twitter:image" content="{site}/assets/og.png?v={v}">
 <script>(function(){{try{{var t=localStorage.getItem('gr-theme');if(t)document.documentElement.dataset.theme=t}}catch(e){{}}}})();</script>
 <link rel="stylesheet" href="assets/style.css?v={v}">
 <link rel="stylesheet" href="assets/theme.css?v={v}">
@@ -63,5 +81,5 @@ TEMPLATE = """<!doctype html>
 
 for file, page, title, desc, data in PAGES:
     scripts = "".join(f'<script src="assets/data/{d}.js?v={VERSION}"></script>\n' for d in DATA) if data else ""
-    (ROOT / file).write_text(TEMPLATE.format(title=title, desc=desc, icon=ICON, v=VERSION, page=page, data=scripts), encoding="utf-8")
+    (ROOT / file).write_text(TEMPLATE.format(title=title, desc=desc, icon=ICON, v=VERSION, page=page, data=scripts, site=SITE, file="" if file == "index.html" else file, ogtitle="Guardia_Rev · Révisions des partiels GCS1" if page == "accueil" else f"{title} · Guardia_Rev", ogdesc="Cours, QCM corrigés, cartes à répétition espacée, partiels blancs, agenda de la promo, XP et défis entre étudiants de Guardia (GCS1)." if page in ("accueil", "connexion") else desc), encoding="utf-8")
     print("écrit", file)
