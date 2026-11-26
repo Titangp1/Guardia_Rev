@@ -6,7 +6,7 @@
 
 <p>
 <a href="https://titangp1.github.io/Guardia_Rev/"><img src="https://img.shields.io/badge/Ouvrir_le_site-1d6fd1?style=flat-square&logo=githubpages&logoColor=white" alt="Ouvrir le site"></a>
-<img src="https://img.shields.io/badge/version-7.0.0-1f2937?style=flat-square" alt="Version 7.0.0">
+<img src="https://img.shields.io/badge/version-7.1.0-1f2937?style=flat-square" alt="Version 7.1.0">
 <img src="https://img.shields.io/badge/acc%C3%A8s-%40guardiaschool.fr-a77d2f?style=flat-square" alt="Accès @guardiaschool.fr">
 </p>
 
@@ -105,7 +105,7 @@ Guardia_Rev/
 ├── assets/
 │   ├── style.css         mise en page et composants
 │   ├── theme.css         thème éditorial v6 (papier crème, bleu nuit, or ; menu plein écran)
-│   ├── studio.css        couche v7 : noir et carmin, bandeau défilant, boutons flèche, frise
+│   ├── studio.css        couche v7 : bandeau défilant, boutons flèche, frise (palette v6)
 │   ├── motion.js         animations d'apparition et en-tête qui se cache au défilement
 │   ├── app.js            code commun à toutes les pages (connexion, navigation, QCM, cartes, défis…)
 │   ├── config.js         domaine autorisé, adresses bannies (empreintes) et configuration Firebase
@@ -122,4 +122,4 @@ Pour ajouter du contenu : éditer le fichier de la matière dans `assets/data/`.
 
 Icônes [Lucide](https://lucide.dev) (licence ISC). Polices Inter et JetBrains Mono (Google Fonts). Choix de design guidés par les skills ui-ux-pro-max, no-ai-design-slop et beautiful-shadows.
 
-<div align="center"><sub>Guardia_Rev · v7.0.0 · Titan_gp1</sub></div>
+<div align="center"><sub>Guardia_Rev · v7.1.0 · Titan_gp1</sub></div>

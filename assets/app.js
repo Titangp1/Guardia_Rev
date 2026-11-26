@@ -3,7 +3,7 @@
    recherche et partiel blanc. Réalisé par Titan_gp1. */
 (function(){
 'use strict';
-const VERSION='7.0.0';
+const VERSION='7.1.0';
 const CFG=window.GR_CONFIG||{};
 const DOMAIN=(CFG.domain||'guardiaschool.fr').toLowerCase();
 const META={isr:['server','#2563eb'],supervision:['activity','#d97706'],fondamentaux:['lock','#0d9488'],devsecops:['terminal','#16a34a'],web:['code','#ea580c'],incident:['alert','#7c3aed'],anglais:['languages','#db2777'],js:['plug','#ca8a04']};
@@ -39,7 +39,7 @@ const plural=(n,w,ws)=>n+' '+(n>1?(ws||w+'s'):w);
 const AGENDA=((window.GR&&window.GR.agenda)||[]).slice().sort((a,b)=>(a.d+a.s).localeCompare(b.d+b.s));
 const AG_SUBJ=[[/devsecops|programmation &/i,'devsecops'],[/supervision/i,'supervision'],[/sécurisation isr/i,'isr'],[/full stack/i,'web'],[/enjeux de la cybers/i,'fondamentaux'],[/crise/i,'incident'],[/^lv1/i,'anglais']];
 const agSubj=t=>{for(const [r,id] of AG_SUBJ)if(r.test(t))return id;return null};
-const AG_KIND={partiel:['Partiels','#c8102e'],rattrapage:['Rattrapages','#c8102e'],vacances:['Vacances','#2f6b47'],langue:['Langues','#a37a33'],cours:['Cours','#3b4861'],evenement:['Événement','#0b6f8c']};
+const AG_KIND={partiel:["Partiels","#a37a33"],rattrapage:["Rattrapages","#a37a33"],vacances:['Vacances','#2f6b47'],langue:['Langues','#a37a33'],cours:['Cours','#3b4861'],evenement:['Événement','#0b6f8c']};
 const fmtDay=k=>new Date(k+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
 const fmtShort=k=>new Date(k+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
 /* Prochaine session d'examens : jours marqués « Partiels » à moins de 4 jours les uns des autres. */
