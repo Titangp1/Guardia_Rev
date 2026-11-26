@@ -310,7 +310,80 @@ jobs:
 <tr><td>Documentation &amp; recul</td><td>10 %</td></tr>
 <tr><td>Présentation / restitution</td><td>10 %</td></tr>
 <tr><td>Bonus (amélioration pertinente et justifiée)</td><td>jusqu'à +10 %</td></tr></table></div>
-<div class="key">Le projet n'attend <b>pas</b> une infrastructure professionnelle. Bugs, blocages et limites sont normaux : savoir <b>expliquer un problème</b>, la tentative de résolution et la piste d'amélioration est valorisé, même si ce n'est pas résolu.</div>`}
+<div class="key">Le projet n'attend <b>pas</b> une infrastructure professionnelle. Bugs, blocages et limites sont normaux : savoir <b>expliquer un problème</b>, la tentative de résolution et la piste d'amélioration est valorisé, même si ce n'est pas résolu.</div>`},
+{t:'Corrections des exercices Python du cours (jeu de rôle)',h:`
+<p>Les quatre exercices de la séance, corrigés et expliqués. Le fil rouge : un personnage qui combat un squelette puis un golem.</p>
+<h3>Exo 1 : variables, input et f-string</h3>
+<pre><code>nomDuPersonnage = input("Veuillez entrer votre nom")
+classe = input("Entrer le nom de votre classe")
+niveau = 1
+point_de_vie = 100
+potion = 20
+force = 50
+print(f"Ton personnage s'appelle {nomDuPersonnage}, il est de classe {classe}, "
+      f"il possède {point_de_vie}pv et il a {force} de force")</code></pre>
+<p><code>input()</code> renvoie toujours du <b>texte</b> ; la f-string insère les variables entre accolades.</p>
+<h3>Exo 2 : hasard et condition</h3>
+<pre><code>import random
+pvSquelette = 10
+degats = random.randint(10, 14)      # entier entre 10 et 14 inclus
+pvSquelette = pvSquelette - degats
+print(f"Vous avez infligé {degats} de dégâts")
+if pvSquelette &lt;= 0:
+    pvSquelette = 0
+    print(f"Vous avez vaincu le squelette. PV du squelette {pvSquelette}pv")
+else:
+    print(f"Vous avez perdu. PV du squelette : {pvSquelette}pv")</code></pre>
+<p>Ici les dégâts (10 à 14) sont toujours supérieurs ou égaux aux 10 PV : le squelette meurt à chaque fois. La correction du cours teste <code>pvSquelette == 0 or pvSquelette &lt;= 0</code>, ce qui revient à <code>pvSquelette &lt;= 0</code>.</p>
+<h3>Exo 3 : la boucle de combat contre le golem</h3>
+<pre><code>golemPv = 50
+while golemPv &gt; 0:
+    coupEpee = random.randint(10, 14)
+    lancerDague = random.randint(2, 22)
+    bouleDeFeu = random.choice([0, 20])     # 0 OU 20, une chance sur deux
+    sort = int(input("Faites votre choix : "))
+    if sort == 1:
+        golemPv = golemPv - coupEpee
+    elif sort == 2:
+        golemPv -= lancerDague
+    elif sort == 3:
+        golemPv -= bouleDeFeu
+        if bouleDeFeu == 0:
+            print("Raté !")
+    else:
+        point_de_vie -= 1                    # mauvais choix : on se blesse
+    if golemPv &lt; 0:
+        golemPv = 0
+    print(f"Golem : {golemPv}  Vous : {point_de_vie}")</code></pre>
+<ul><li>Les dégâts sont <b>tirés à chaque tour</b>, au début de la boucle.</li>
+<li><code>random.choice([0, 20])</code> choisit un élément de la liste ; <code>random.randint(2, 22)</code> un entier, bornes comprises.</li>
+<li><code>golemPv -= x</code> équivaut à <code>golemPv = golemPv - x</code>.</li>
+<li>On remet les PV à 0 s'ils deviennent négatifs, pour l'affichage.</li>
+<li><code>int(input(...))</code> plante (<code>ValueError</code>) si on tape une lettre : à protéger par un <code>try/except</code>.</li></ul>
+<h3>Exo 4 : l'inventaire (listes et enumerate)</h3>
+<pre><code>inventaire = ["Potion de soin", "Potion de mana", "Pièce d'or"]
+print(f"La taille de l'inventaire est de {len(inventaire)} emplacements")   # 3
+inventaire.append("Arme Ultime")                  # ajoute à la fin
+point_de_vie += 20
+if "Potion de soin" in inventaire:                # test d'appartenance
+    inventaire.remove("Potion de soin")           # retire par valeur
+for i, objet in enumerate(inventaire, 1):          # numérote à partir de 1
+    print(f"Item {i}: {objet}")</code></pre>
+<p>Affichage final : <code>Item 1: Potion de mana</code>, <code>Item 2: Pièce d'or</code>, <code>Item 3: Arme Ultime</code>.</p>
+<div class="key"><code>enumerate(liste, 1)</code> renvoie des paires <b>(numéro, élément)</b> : <code>(1, 'Potion de mana')</code>, <code>(2, "Pièce d'or")</code>… Le <code>for i, objet in …</code> décompose chaque paire. Sans le 1, la numérotation commence à 0.</div>`},
+{t:'Créer et activer un venv selon son système',h:`
+<p>Un <b>environnement virtuel</b> isole les bibliothèques d'un projet. On le crée une fois, on l'active à chaque session.</p>
+<pre><code>cd "chemin/vers/ton/dossier"        # 1. se placer dans le projet
+python -m venv venv                 # 2. créer (Windows le plus souvent)
+python3 -m venv venv                #    ou sur macOS / Linux
+py -m venv venv                     #    si ni python ni python3 ne marchent sous Windows</code></pre>
+<div class="tbl"><table><tr><th>Terminal</th><th>Commande d'activation</th></tr>
+<tr><td>Windows, Invite de commandes (CMD)</td><td><code>venv\\Scripts\\activate</code></td></tr>
+<tr><td>Windows, PowerShell</td><td><code>venv\\Scripts\\Activate.ps1</code></td></tr>
+<tr><td>Windows, Git Bash</td><td><code>source venv/Scripts/activate</code></td></tr>
+<tr><td>macOS / Linux</td><td><code>source venv/bin/activate</code></td></tr></table></div>
+<div class="trap">Sous Windows le dossier s'appelle <code>Scripts</code>, pas <code>bin</code>. Si PowerShell refuse d'exécuter le script : <code>Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</code>, puis réessayer.</div>
+<p>Vérifier : <code>(venv)</code> apparaît au début de la ligne de commande. Installer ensuite avec <code>pip install -r requirements.txt</code>. Pour sortir : <code>deactivate</code>.</p>`}
 ],
 cards:[
 ['Résultat de <code>7 // 2</code> et <code>7 % 2</code> ?','<code>3</code> (division entière) et <code>1</code> (reste).'],
@@ -361,7 +434,13 @@ cards:[
 ['Tamagochi : les 4 caractéristiques de l\'animal ?','Faim, énergie, humeur, état (vivant ou mort).'],
 ['Poids du QCM des travaux préparatoires ?','10 % de la note ; le projet compte pour 90 %.'],
 ['Monitor « débutant » : qu\'attend-on ?','Pas de vraie supervision : expliquer comment vérifier que l\'appli marche et ce qu\'on surveillerait en conditions réelles.'],
-['IA générative dans le projet : la règle ?','L\'utiliser est permis mais doit être déclaré et vérifié ; le code produit reste sous votre responsabilité.']
+['IA générative dans le projet : la règle ?','L\'utiliser est permis mais doit être déclaré et vérifié ; le code produit reste sous votre responsabilité.'],
+['Que renvoie <code>enumerate(["a","b"], 1)</code> ?','Les paires <code>(1, "a")</code> puis <code>(2, "b")</code>.'],
+['<code>random.choice([0, 20])</code> ?','0 ou 20, chacun avec une chance sur deux.'],
+['Activer un venv sous PowerShell ?','<code>venv\\Scripts\\Activate.ps1</code>'],
+['Activer un venv sous macOS / Linux ?','<code>source venv/bin/activate</code>'],
+['PowerShell refuse d’activer le venv : que faire ?','<code>Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</code> puis réessayer.'],
+['Comment savoir que le venv est actif ? Comment en sortir ?','<code>(venv)</code> apparaît dans l’invite ; <code>deactivate</code> pour sortir.']
 ],
 quiz:[
 {q:'Que affiche ce code ?',code:'x = 7\ny = 2\nprint(x // y, x % y)',o:['3.5 1','3 1','3 0','4 1'],a:[1],e:'// est la division entière (3), % le reste (1).'},
@@ -412,7 +491,11 @@ quiz:[
 {q:'Quelles exigences Docker figurent au cahier des charges ? (plusieurs réponses)',o:['Accessible en localhost','Port imposé : 80','Données persistantes','Image poussée sur Docker Hub par la CI'],a:[0,2,3],e:'Le port est au choix ; les données doivent survivre au conteneur (volume).',src:'cahier des charges'},
 {q:'Quel critère pèse le plus dans la note du projet ?',o:['Documentation & recul (10 %)','Déploiement (10 %)','Fonctionnalités API, Démarche DevOps et Qualité & tests (20 % chacun)','Présentation (10 %)'],a:[2],e:'Trois blocs à 20 %, puis déploiement, documentation et présentation à 10 %, QCM 10 %.',src:'cahier des charges'},
 {q:'Où stocker le token Docker Hub utilisé par GitHub Actions ?',o:['Dans le Dockerfile','Dans ci.yml','Dans les secrets GitHub (Settings › Secrets and variables › Actions)','Dans le README'],a:[2],e:'Jamais en clair dans le code ni dans les fichiers YAML.',src:'cahier des charges'},
-{q:'Un bug n\'a pas pu être corrigé avant la soutenance. Que conseille le cahier des charges ?',o:['Le cacher','L\'expliquer : problème, tentatives, piste d\'amélioration (c\'est valorisé)','Supprimer la fonctionnalité du dépôt','Changer de sujet'],a:[1],e:'Bugs et blocages sont « normaux et attendus » : savoir les expliquer compte.',src:'cahier des charges'}
+{q:'Un bug n\'a pas pu être corrigé avant la soutenance. Que conseille le cahier des charges ?',o:['Le cacher','L\'expliquer : problème, tentatives, piste d\'amélioration (c\'est valorisé)','Supprimer la fonctionnalité du dépôt','Changer de sujet'],a:[1],e:'Bugs et blocages sont « normaux et attendus » : savoir les expliquer compte.',src:'cahier des charges'},
+{q:'Que affiche ce code ?',code:'inventaire = ["Potion de soin", "Potion de mana", "Pièce d\'or"]\ninventaire.append("Arme Ultime")\ninventaire.remove("Potion de soin")\nfor i, objet in enumerate(inventaire, 1):\n    print(i, objet)',o:['0 Potion de mana / 1 Pièce d’or / 2 Arme Ultime','1 Potion de mana / 2 Pièce d’or / 3 Arme Ultime','1 Potion de soin / 2 Potion de mana / 3 Pièce d’or / 4 Arme Ultime','Erreur'],a:[1],e:'remove enlève la potion de soin ; enumerate(…, 1) numérote à partir de 1.',src:'corrections du cours'},
+{q:'Dans l’exo 2, pvSquelette = 10 et degats = random.randint(10, 14). Le squelette meurt :',o:['Jamais','Une fois sur deux','À tous les coups','Seulement si degats vaut 14'],a:[2],e:'Les dégâts valent au moins 10 : pvSquelette devient ≤ 0 à chaque fois.',src:'corrections du cours'},
+{q:'Sous Windows, dans quel dossier du venv se trouve le script d’activation ?',o:['bin','Scripts','lib','activate'],a:[1],e:'venv\\Scripts\\activate (bin sur macOS et Linux).',src:'venv'},
+{q:'Pourquoi les dégâts sont-ils tirés au début de chaque tour de la boucle while du golem ?',o:['Pour accélérer le programme','Pour obtenir une nouvelle valeur aléatoire à chaque attaque','Parce que random ne marche qu’une fois','Ce n’est pas nécessaire'],a:[1],e:'Tirés une seule fois avant la boucle, ils seraient identiques à chaque tour.',src:'corrections du cours'}
 ],
 exos:[
 {t:'Écrire une fonction Python',pts:'entraînement',q:`<p>Écrivez une fonction <code>nourrir(pet)</code> pour le Tamagochi : <code>pet</code> est un dictionnaire <code>{"faim": 70, "energie": 40, "humeur": 50, "vivant": True}</code>. Nourrir réduit la faim de 30 et augmente l'énergie et l'humeur de 10. Les valeurs restent entre 0 et 100. Si l'animal est mort, la fonction lève une erreur.</p>`,r:`
@@ -484,6 +567,18 @@ print(max(0, golem), max(0, joueur))</code></pre>`},
         if 1 &lt;= n &lt;= 10:
             return n
         print("Le code doit être entre 1 et 10.")</code></pre>
-<p>Points clés : boucle infinie quittée par <code>return</code>, <code>try/except ValueError</code> pour les saisies non numériques, contrôle des bornes. C'est de la <b>validation d'entrée</b>, premier réflexe de sécurité.</p>`}
+<p>Points clés : boucle infinie quittée par <code>return</code>, <code>try/except ValueError</code> pour les saisies non numériques, contrôle des bornes. C'est de la <b>validation d'entrée</b>, premier réflexe de sécurité.</p>`},
+{t:'Protéger le choix du sort contre les mauvaises saisies',pts:'entraînement',q:`<p>Dans le combat contre le golem, <code>sort = int(input(...))</code> plante si l'utilisateur tape une lettre. Réécrivez cette ligne pour redemander tant que la saisie n'est pas 1, 2 ou 3.</p>`,r:`
+<pre><code>while True:
+    saisie = input("Faites votre choix (1, 2 ou 3) : ")
+    try:
+        sort = int(saisie)
+    except ValueError:
+        print("Tapez un chiffre.")
+        continue
+    if sort in (1, 2, 3):
+        break
+    print("Choisissez 1, 2 ou 3.")</code></pre>
+<p><code>try/except ValueError</code> attrape la conversion impossible, <code>continue</code> relance la question, <code>break</code> sort de la boucle quand la saisie est valide.</p>`}
 ]
 });

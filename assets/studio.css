@@ -79,3 +79,24 @@
 
 @media (prefers-reduced-motion:reduce){.marquee-track{animation:none}}
 @media print{.marquee,.cta{display:none}}
+
+/* Agenda : vue mois simple */
+.mg-h{margin-bottom:16px}
+.mg-h h2{text-transform:capitalize;font-size:clamp(28px,3vw,40px)}
+.mg-h .btn:first-child .ico{transform:rotate(180deg)}
+.mg-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.mg-w{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);text-align:center;padding:4px 0 8px}
+.mg-c{min-height:96px;border:1px solid var(--border);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:3px;background:var(--surface);min-width:0}
+.mg-out{border:0;background:transparent}
+.mg-we{background:var(--surface-2)}
+.mg-off{background:color-mix(in srgb,#2f6b47 8%,var(--surface))}
+.mg-exam{border-color:var(--gold);background:var(--xp-soft)}
+.mg-today{border:2px solid var(--ink)}
+.mg-d{font-family:var(--f-serif);font-size:20px;line-height:1;color:var(--ink)}
+.mg-today .mg-d{font-style:italic}
+.mg-e{--k:var(--ink-3);display:block;font-size:11px;line-height:1.25;padding:2px 5px;border-radius:5px;border-left:3px solid var(--k);background:color-mix(in srgb,var(--k) 9%,transparent);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mg-e b{font-weight:700;margin-right:4px;font-variant-numeric:tabular-nums}
+.mg-more{font-size:11px;color:var(--ink-3)}
+.mg-leg{margin-top:12px;display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center}
+.mg-leg .dia{width:8px;height:8px;margin-right:-8px}
+@media (max-width:700px){.mg-c{min-height:58px;padding:4px}.mg-e{font-size:0;padding:0;height:5px;border-left-width:0;background:var(--k)}.mg-e b{display:none}.mg-d{font-size:16px}}

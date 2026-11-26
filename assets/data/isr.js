@@ -128,7 +128,29 @@ fiche:[
 <tr><td>Kerberos (mot de passe)</td><td>464</td><td>TCP et UDP</td></tr><tr><td>LDAPS</td><td>636</td><td>TCP</td></tr>
 <tr><td>Catalogue global</td><td>3268</td><td>TCP</td></tr><tr><td>RDP</td><td>3389</td><td>TCP</td></tr>
 <tr><td>Squid (proxy)</td><td>3128</td><td>TCP</td></tr><tr><td>Wazuh agent → manager</td><td>1514 (événements), 1515 (enrôlement)</td><td>TCP</td></tr>
-</table></div>`}
+</table></div>`},
+{t:'Projet ISR : ce que le client attend',h:`
+<p>Les attendus transmis par l'intervenant pour le projet d'infrastructure (à rendre avec un dossier technique, puis une soutenance).</p>
+<h3>Cinq machines virtuelles</h3>
+<div class="tbl"><table><tr><th>VM</th><th>Zone</th><th>Rôle</th></tr>
+<tr><td>OPNsense</td><td>entre les zones</td><td>Pare-feu, routage entre CLT / ADM / DMZ, filtrage, <b>relais DHCP</b></td></tr>
+<tr><td>Serveur Windows AD</td><td>ADM</td><td>Active Directory, au moins <b>une GPO</b> démontrée, <b>serveur DHCP</b> pour la zone CLT, DNS</td></tr>
+<tr><td>Poste client</td><td>CLT</td><td>Reçoit son IP du DHCP via le relais, ouvre les sites par leur nom</td></tr>
+<tr><td>Reverse proxy</td><td>DMZ</td><td>Seule porte d'entrée vers les sites web</td></tr>
+<tr><td>Serveur web</td><td>DMZ</td><td>Héberge <b>deux sites distincts</b></td></tr></table></div>
+<h3>Exigences techniques</h3>
+<ul><li><b>Segmentation</b> : trois zones distinctes (CLT, ADM, DMZ) gérées par OPNsense.</li>
+<li><b>Filtrage</b> entre les zones selon le <b>moindre privilège</b> : seuls les flux nécessaires sont autorisés, le reste est bloqué.</li>
+<li><b>Active Directory</b> fonctionnel avec au minimum une GPO dont on <b>prouve</b> l'effet sur le client.</li>
+<li><b>DHCP</b> sur le serveur AD pour la zone CLT, et <b>relais DHCP</b> sur OPNsense, car le serveur n'est pas dans le même réseau que les clients (le broadcast DHCP ne traverse pas un routeur).</li>
+<li><b>Accès aux sites</b> : depuis CLT, les deux sites s'ouvrent par leurs <b>noms DNS</b> en passant <b>obligatoirement</b> par le reverse proxy ; aucun accès direct au serveur web depuis CLT.</li></ul>
+<div class="key">Pour prouver l'interdiction d'accès direct : depuis le client, l'IP du serveur web ne répond pas (règle OPNsense), mais le nom du site, résolu vers le reverse proxy, affiche bien la page.</div>
+<h3>Les rendus</h3>
+<ul><li><b>Dossier technique</b> envoyé par mail (échéance donnée : jeudi 22 octobre 2026, 22 h) : schéma réseau, plan d'adressage, règles de filtrage, configurations, preuves de fonctionnement.</li>
+<li><b>Soutenance de 10 à 15 minutes</b> devant le <b>client final, non technique</b> : expliquer les choix, les solutions et le <b>bénéfice pour le client</b> plutôt que les commandes.</li></ul>
+<h3>Ressources partagées par la promo</h3>
+<ul><li><a href="https://www.youtube.com/watch?v=GYidH6gXwRY" target="_blank" rel="noopener">Vidéo : installation et configuration de base d'OPNsense sur VirtualBox</a> (tuto d'un étudiant de B2).</li>
+<li><a href="https://drive.google.com/drive/folders/1uV6HnY8Sf2QPugjZ3VC-soljCJqFlBCA?usp=sharing" target="_blank" rel="noopener">Guide pas à pas des 5 VM</a> partagé par Titan_gp1 (rédigé avec l'aide d'une IA : à vérifier et comprendre, pas à recopier).</li></ul>`}
 ],
 cards:[
 ['Combien de couches dans le modèle OSI ?','7 : physique, liaison, réseau, transport, session, présentation, application.'],
@@ -167,7 +189,12 @@ cards:[
 ['Commande pour voir sa configuration IP complète sous Windows ?','<code>ipconfig /all</code>'],
 ['Ping par IP OK mais pas par nom : quel service est en cause ?','Le DNS.'],
 ['Écart d\'heure maximal toléré par Kerberos ?','5 minutes.'],
-['Qu\'est-ce que la route par défaut ?','0.0.0.0/0 : là où l\'on envoie tout ce qui n\'a pas de route plus précise (vers Internet).']
+['Qu\'est-ce que la route par défaut ?','0.0.0.0/0 : là où l\'on envoie tout ce qui n\'a pas de route plus précise (vers Internet).'],
+['Les 5 VM du projet ISR ?','OPNsense, poste client, serveur Windows AD, reverse proxy, serveur web.'],
+['Les 3 zones du projet ISR ?','CLT (clients), ADM (administration, AD), DMZ (reverse proxy et web).'],
+['Où tourne le DHCP de la zone CLT, et pourquoi faut-il un relais ?','Sur le serveur AD ; le relais DHCP d’OPNsense transmet les demandes car le broadcast ne traverse pas le routeur.'],
+['Comment le client doit-il accéder aux deux sites ?','Par leurs noms DNS, en passant obligatoirement par le reverse proxy ; jamais directement au serveur web.'],
+['Public de la soutenance ISR ?','Le client final, non technique : choix, solutions et bénéfices expliqués simplement, en 10 à 15 minutes.']
 ],
 quiz:[
 {q:'Qu\'est-ce qu\'un VLAN ?',o:['Un protocole de routage dynamique','Une technologie permettant de créer des réseaux logiques distincts sur un même réseau physique','Une méthode de segmentation réseau','Une méthode de cryptage des données réseau'],a:[1,2],e:'Le VLAN crée des réseaux logiques séparés sur le même matériel : c\'est donc bien une méthode de segmentation. Il ne route pas et ne chiffre pas.',src:'Partiel 2025'},
@@ -210,7 +237,11 @@ quiz:[
 {q:'Pour publier sur Internet le reverse proxy de la DMZ, on configure sur le pare-feu :',o:['Une redirection de port (NAT destination) vers le reverse proxy','Un relais DHCP','Un VLAN supplémentaire','Une GPO'],a:[0],e:'Le port 443 public est redirigé vers l\'IP interne du reverse proxy, avec une règle qui l\'autorise.'},
 {q:'Quel est l\'écart d\'horloge maximal toléré par défaut par Kerberos ?',o:['30 secondes','5 minutes','1 heure','Aucun'],a:[1],e:'D\'où l\'importance de NTP : au-delà, l\'authentification échoue.'},
 {q:'Que fait la commande tracert (traceroute) ?',o:['Elle affiche les routeurs traversés jusqu\'à la destination','Elle résout un nom DNS','Elle renouvelle le bail DHCP','Elle liste les ports ouverts'],a:[0],e:'Utile pour voir à quel saut le trafic s\'arrête.'},
-{q:'Quelle est la route par défaut ?',o:['127.0.0.1','0.0.0.0/0','255.255.255.255','192.168.0.0/16'],a:[1],e:'Elle couvre toutes les destinations sans route plus précise.'}
+{q:'Quelle est la route par défaut ?',o:['127.0.0.1','0.0.0.0/0','255.255.255.255','192.168.0.0/16'],a:[1],e:'Elle couvre toutes les destinations sans route plus précise.'},
+{q:'Dans le projet ISR, quel service fait le relais DHCP vers la zone CLT ?',o:['Le serveur web','OPNsense','Le reverse proxy','Le poste client'],a:[1],e:'Le DHCP est sur le serveur AD ; OPNsense relaie les demandes des clients.',src:'projet ISR'},
+{q:'Depuis la zone CLT, que doit-il se passer en tapant l’IP du serveur web ?',o:['Le site s’affiche','Rien : l’accès direct est bloqué par le filtrage','Le DHCP répond','Le client redémarre'],a:[1],e:'Les sites ne sont joignables que par leur nom, via le reverse proxy.',src:'projet ISR'},
+{q:'Combien de sites web héberge le serveur web de la DMZ ?',o:['Un','Deux','Trois','Aucun'],a:[1],e:'Deux sites distincts, chacun avec son nom DNS.',src:'projet ISR'},
+{q:'Le principe des règles de filtrage entre zones ?',o:['Tout autoriser puis bloquer ce qui pose problème','Le moindre privilège : n’autoriser que les flux nécessaires','Ne filtrer que la DMZ','Filtrer seulement le web'],a:[1],e:'Les flux autorisés sont limités au strict nécessaire.',src:'projet ISR'}
 ],
 exos:[
 {t:'Lien entre DHCP et DNS',src:'ancien partiel',pts:'2 pts',q:`<p>Expliquez le lien entre DHCP et DNS dans votre architecture, et le rôle qu'ils jouent pour les clients.</p>`,r:`
@@ -264,6 +295,16 @@ exos:[
 <li><b>Relais DHCP</b> : le serveur est dans une autre zone ; vérifier sur OPNsense que le <b>DHCP Relay</b> est activé sur l'interface CLT et pointe vers l'IP de SRV-AD01.</li>
 <li><b>Règles</b> : autoriser UDP 67/68 entre le pare-feu et SRV-AD01 ; regarder le Live View du pare-feu.</li>
 <li><b>Serveur DHCP</b> : service démarré, <b>serveur autorisé dans l'AD</b>, étendue CLT créée et <b>activée</b>, options (routeur = 192.168.20.254, DNS = 192.168.10.10), étendue non épuisée.</li>
-<li><b>Poste</b> : carte réseau sur le bon pont/VLAN, puis <code>ipconfig /release</code> et <code>ipconfig /renew</code>.</li></ol>`}
+<li><b>Poste</b> : carte réseau sur le bon pont/VLAN, puis <code>ipconfig /release</code> et <code>ipconfig /renew</code>.</li></ol>`},
+{t:'Matrice de flux minimale du projet ISR',pts:'projet ISR',q:`<p>Listez les flux à autoriser entre CLT, ADM et DMZ pour que le projet fonctionne (DHCP, DNS, authentification AD, accès aux deux sites), tout le reste étant bloqué.</p>`,r:`
+<div class="tbl"><table><tr><th>Source</th><th>Destination</th><th>Service</th><th>Pourquoi</th></tr>
+<tr><td>CLT</td><td>OPNsense (relais)</td><td>DHCP 67-68/UDP</td><td>Obtenir une IP ; OPNsense relaie vers le serveur AD</td></tr>
+<tr><td>OPNsense</td><td>Serveur AD (ADM)</td><td>DHCP 67/UDP</td><td>Relais DHCP</td></tr>
+<tr><td>CLT</td><td>Serveur AD</td><td>DNS 53, Kerberos 88, LDAP 389, SMB 445</td><td>Résolution de noms, ouverture de session, GPO</td></tr>
+<tr><td>CLT</td><td>Reverse proxy (DMZ)</td><td>HTTP 80 / HTTPS 443</td><td>Accès aux deux sites par leurs noms</td></tr>
+<tr><td>Reverse proxy</td><td>Serveur web</td><td>HTTP 80 / HTTPS 443</td><td>Transmission des requêtes</td></tr>
+<tr><td>CLT</td><td>Serveur web</td><td>tout</td><td><b>Bloqué</b> : pas d'accès direct</td></tr>
+<tr><td>DMZ</td><td>ADM</td><td>tout</td><td><b>Bloqué</b> : un serveur exposé ne doit pas atteindre l'AD</td></tr></table></div>
+<p>Dernière règle de chaque interface : tout bloquer (moindre privilège). Le DNS doit résoudre les deux noms de sites vers l'IP du reverse proxy.</p>`}
 ]
 });
