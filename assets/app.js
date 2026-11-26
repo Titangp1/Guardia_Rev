@@ -3,7 +3,7 @@
    recherche et partiel blanc. Réalisé par Titan_gp1. */
 (function(){
 'use strict';
-const VERSION='7.2.0';
+const VERSION='7.2.1';
 const CFG=window.GR_CONFIG||{};
 const DOMAIN=(CFG.domain||'guardiaschool.fr').toLowerCase();
 const META={isr:['server','#2563eb'],supervision:['activity','#d97706'],fondamentaux:['lock','#0d9488'],devsecops:['terminal','#16a34a'],web:['code','#ea580c'],incident:['alert','#7c3aed'],anglais:['languages','#db2777'],js:['plug','#ca8a04']};

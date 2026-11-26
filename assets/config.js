@@ -9,7 +9,8 @@ window.GR_CONFIG = {
   blocked: [
     '50fdb7e7463cbc703e96a7e378002137ef56c3effa71e6e6bf295942cc03f6dc',
     '584f24b53e94295bc618fd1941b653bf45866923f5e81357abf194e8668bb1ed',
-    'd0f8637156ca71f4d8bb4d4b6582ab58234d2997feceae4843a452f815f5b5b4'
+    'd0f8637156ca71f4d8bb4d4b6582ab58234d2997feceae4843a452f815f5b5b4',
+    '817a0deca5e0ca6f5799a9a56584ab8ac88fc666107ddc25e43e55a0165cf72b'
   ],
   firebase: {
     apiKey: 'AIzaSyAZVEPFapmL7cKCyvM1x_GPase23cy7lV8',
