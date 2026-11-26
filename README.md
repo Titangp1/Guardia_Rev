@@ -6,7 +6,7 @@
 
 <p>
 <a href="https://titangp1.github.io/Guardia_Rev/"><img src="https://img.shields.io/badge/Ouvrir_le_site-1d6fd1?style=flat-square&logo=githubpages&logoColor=white" alt="Ouvrir le site"></a>
-<img src="https://img.shields.io/badge/version-7.1.0-1f2937?style=flat-square" alt="Version 7.1.0">
+<img src="https://img.shields.io/badge/version-7.3.0-1f2937?style=flat-square" alt="Version 7.3.0">
 <img src="https://img.shields.io/badge/acc%C3%A8s-%40guardiaschool.fr-a77d2f?style=flat-square" alt="Accès @guardiaschool.fr">
 </p>
 
@@ -73,7 +73,7 @@ Le compte à rebours de l'accueil utilise la prochaine session « Partiels » si
 
 ## Firebase
 
-1. *Authentication → Sign-in method* : activer **E-mail/Mot de passe** et **Google**.
+1. *Authentication → Sign-in method* : activer **E-mail/Mot de passe** et **Google**. Dans E-mail/Mot de passe, activer aussi **Lien envoyé par e-mail (connexion sans mot de passe)** : les comptes Google doivent ouvrir une fois un lien reçu par mail avant d'accéder au site.
 2. *Authentication → Paramètres → Domaines autorisés* : ajouter `titangp1.github.io`.
 3. *Authentication → Modèles → Validation de l'adresse e-mail* : coller `firebase/email-verification.html` (objet : « Valide ton compte Guardia_Rev »).
 4. *Firestore → Règles* : coller `firebase/firestore.rules`, puis **Publier**. À refaire après chaque modification du fichier (profils et défis depuis la v3).
@@ -122,4 +122,4 @@ Pour ajouter du contenu : éditer le fichier de la matière dans `assets/data/`.
 
 Icônes [Lucide](https://lucide.dev) (licence ISC). Polices Inter et JetBrains Mono (Google Fonts). Choix de design guidés par les skills ui-ux-pro-max, no-ai-design-slop et beautiful-shadows.
 
-<div align="center"><sub>Guardia_Rev · v7.1.0 · Titan_gp1</sub></div>
+<div align="center"><sub>Guardia_Rev · v7.3.0 · Titan_gp1</sub></div>

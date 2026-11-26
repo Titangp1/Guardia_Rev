@@ -3,7 +3,7 @@
    recherche et partiel blanc. Réalisé par Titan_gp1. */
 (function(){
 'use strict';
-const VERSION='7.2.1';
+const VERSION='7.3.0';
 const CFG=window.GR_CONFIG||{};
 const DOMAIN=(CFG.domain||'guardiaschool.fr').toLowerCase();
 const META={isr:['server','#2563eb'],supervision:['activity','#d97706'],fondamentaux:['lock','#0d9488'],devsecops:['terminal','#16a34a'],web:['code','#ea580c'],incident:['alert','#7c3aed'],anglais:['languages','#db2777'],js:['plug','#ca8a04']};
@@ -25,7 +25,8 @@ const emailOk=e=>new RegExp('^[^\\s@]+@'+DOMAIN.replace(/\./g,'\\.')+'$','i').te
 const BLOCKED=new Set((CFG.blocked||[]).map(h=>String(h).toLowerCase()));
 async function isBlocked(e){if(!BLOCKED.size)return false;try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(String(e||'').trim().toLowerCase()));
   return BLOCKED.has([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''))}catch(_){return false}}
-const BLOCKED_MSG='Inscription et connexion impossibles avec cette adresse.';
+/* Adresse interdite : aucun message, on déconnecte et on recharge la page de connexion, vide. */
+async function kick(){try{if(S.api)await S.api.signOut()}catch(e){}try{sessionStorage.removeItem('gr-authmsg')}catch(e){}location.replace(U.login)}
 const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const fold=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const _tmp=document.createElement('div');
@@ -143,9 +144,37 @@ async function firebaseBackend(fb){
   const [A,U,F]=await Promise.all(['firebase-app.js','firebase-auth.js','firebase-firestore.js'].map(f=>import(SDK+f)));
   const app=A.initializeApp(fb),auth=U.getAuth(app),db=F.getFirestore(app);auth.languageCode='fr';
   const udoc=uid=>F.doc(db,'users',uid),pdoc=uid=>F.doc(db,'profiles',uid),profs=F.collection(db,'profiles'),chs=F.collection(db,'challenges');
-  const verify=async u=>{try{await U.sendEmailVerification(u,{url:new URL('connexion.html',location.href).href})}
+  /* Un compte est « vérifié » quand son adresse a été confirmée par un lien reçu par email.
+     Comptes email + mot de passe : email de vérification classique.
+     Comptes Google : un lien de connexion par email doit aussi être ouvert une fois ; il ajoute
+     le fournisseur « password » (lien email) au compte. Sans lui, le compte reste bloqué sur l'écran de vérification. */
+  const linked=u=>!!u&&u.providerData.some(p=>p.providerId==='password');
+  const LINK_KEY='gr-link-email',SENT_KEY='gr-link-sent';
+  const backUrl=()=>new URL('connexion.html',location.href).href;
+  const verify=async u=>{
+    if(!linked(u)){await U.sendSignInLinkToEmail(auth,u.email,{url:backUrl(),handleCodeInApp:true});
+      try{localStorage.setItem(LINK_KEY,u.email.toLowerCase());localStorage.setItem(SENT_KEY,JSON.stringify({e:u.email.toLowerCase(),t:Date.now()}))}catch(e){}return}
+    try{await U.sendEmailVerification(u,{url:backUrl()})}
     catch(e){if(/continue-uri|unauthorized/.test(e.code||''))await U.sendEmailVerification(u);else throw e}};
-  const asUser=u=>u?{id:u.uid,email:(u.email||'').toLowerCase(),name:u.displayName||'',verified:!!u.emailVerified}:null;
+  /* Envoi automatique du lien aux comptes Google, au plus une fois toutes les 10 minutes. */
+  const autoSend=async u=>{if(!u||linked(u))return;try{const x=JSON.parse(localStorage.getItem(SENT_KEY)||'null');if(x&&x.e===u.email.toLowerCase()&&Date.now()-x.t<6e5)return}catch(e){}
+    try{await verify(u)}catch(e){console.error(e)}};
+  const asUser=u=>u?{id:u.uid,email:(u.email||'').toLowerCase(),name:u.displayName||'',verified:!!u.emailVerified&&linked(u),google:!linked(u)}:null;
+  /* Retour depuis le lien reçu par email : on rattache la confirmation au compte. */
+  if(U.isSignInWithEmailLink(auth,location.href)){
+    await auth.authStateReady();
+    const cu=auth.currentUser;let em='';try{em=localStorage.getItem(LINK_KEY)||''}catch(e){}
+    em=(em||(cu&&cu.email)||window.prompt('Pour confirmer, indiquez votre adresse @'+DOMAIN+' :')||'').trim().toLowerCase();
+    try{
+      if(em&&!(await isBlocked(em))){
+        if(cu&&(cu.email||'').toLowerCase()===em&&!linked(cu))await U.linkWithCredential(cu,U.EmailAuthProvider.credentialWithLink(em,location.href));
+        else if(!cu||(cu.email||'').toLowerCase()!==em)await U.signInWithEmailLink(auth,em,location.href);
+        if(auth.currentUser){await U.reload(auth.currentUser);await auth.currentUser.getIdToken(true)}
+        try{localStorage.removeItem(LINK_KEY)}catch(e){}
+      }
+    }catch(e){console.error(e);try{sessionStorage.setItem('gr-authmsg',JSON.stringify({k:'err',t:'Ce lien de confirmation est expiré ou a déjà servi. Demandez-en un nouveau.'}))}catch(_){}}
+    history.replaceState(null,'',location.pathname);
+  }
   const row=d=>({id:d.id,...d.data()});
   return {
     mode:'firebase',
@@ -154,9 +183,10 @@ async function firebaseBackend(fb){
       await U.updateProfile(r.user,{displayName:pseudo});await verify(r.user);return asUser(r.user)},
     async signIn(email,pw){const r=await U.signInWithEmailAndPassword(auth,email,pw);return asUser(r.user)},
     async google(){const p=new U.GoogleAuthProvider();p.setCustomParameters({hd:DOMAIN,prompt:'select_account'});
-      try{return asUser((await U.signInWithPopup(auth,p)).user)}catch(e){if(e.code==='auth/popup-blocked'){await U.signInWithRedirect(auth,p);return null}throw e}},
+      try{const r=(await U.signInWithPopup(auth,p)).user;if(!(await isBlocked(r.email)))await autoSend(r);return asUser(r)}catch(e){if(e.code==='auth/popup-blocked'){await U.signInWithRedirect(auth,p);return null}throw e}},
     async reload(){if(!auth.currentUser)return null;await U.reload(auth.currentUser);await auth.currentUser.getIdToken(true);return asUser(auth.currentUser)},
     resend:()=>verify(auth.currentUser),
+    autoSend:()=>autoSend(auth.currentUser),
     reset:e=>U.sendPasswordResetEmail(auth,e),
     signOut:()=>U.signOut(auth),
     setName:n=>auth.currentUser?U.updateProfile(auth.currentUser,{displayName:n}):null,
@@ -303,8 +333,9 @@ async function boot(){
   S.api.onAuth(async u=>{
     const deny=async t=>{await S.api.signOut();S.authMsg={k:'err',t};try{sessionStorage.setItem('gr-authmsg',JSON.stringify(S.authMsg))}catch(e){}if(PAGE!=='connexion')location.replace(U.login)};
     if(u&&!emailOk(u.email)){await deny('Seules les adresses @'+DOMAIN+' sont acceptées.');return}
-    if(u&&await isBlocked(u.email)){await deny(BLOCKED_MSG);return}
+    if(u&&await isBlocked(u.email)){await kick();return}
     S.user=u;
+    if(u&&!u.verified&&u.google&&S.api.autoSend)await S.api.autoSend();
     if(PAGE==='connexion'){if(u&&u.verified){location.replace(safeNext(qp('next')));return}S.ready=true;renderAuth();return}
     if(!u||!u.verified){location.replace(S.loggingOut?U.login:U.login+'?next='+encodeURIComponent(here()));return}
     S.data={progress:{}};S.me=null;S.soc={top:null,count:null,rank:null,chals:null,t:0,loading:false};
@@ -328,7 +359,7 @@ function renderAuth(){
   const v=S.authView,demo=S.api.mode==='local';
   if(S.user&&!S.user.verified){
     root.innerHTML=`<div class="auth">${authArt()}<div class="auth-main"><form class="card auth-card fade" id="verifyForm">${brandBlock()}
-      <div><h1>Vérifiez votre email</h1><p class="muted" style="margin-top:6px">Un lien de confirmation a été envoyé à <b style="color:var(--ink)">${esc(S.user.email)}</b>. Ouvrez-le (pensez aux spams), puis revenez ici.</p></div>
+      <div><h1>Vérifiez votre email</h1><p class="muted" style="margin-top:6px">${S.user.google?'Pour finir la connexion avec Google, ouvrez le lien de confirmation':'Un lien de confirmation a été'} envoyé à <b style="color:var(--ink)">${esc(S.user.email)}</b>${S.user.google?'. Il ouvre directement le site (pensez aux spams).':'. Ouvrez-le (pensez aux spams), puis revenez ici.'}</p></div>
       ${msgBlock()}<button class="btn primary lg" type="submit">J'ai confirmé mon email</button>
       <div class="row spread"><button class="linkbtn" type="button" id="resend">Renvoyer l'email</button><button class="linkbtn" type="button" id="out">Changer de compte</button></div></form></div></div>`;
     $('#verifyForm').onsubmit=async e=>{e.preventDefault();const u=await S.api.reload();if(u&&u.verified){location.replace(safeNext(qp('next')))}
@@ -360,9 +391,9 @@ function renderAuth(){
   em.addEventListener('input',()=>{if(em.getAttribute('aria-invalid')==='true'&&emailOk(em.value))em.setAttribute('aria-invalid','false')});
   $('#authForm').onsubmit=async e=>{e.preventDefault();const go=$('#go'),lbl=go.textContent;go.disabled=true;go.textContent=v==='signup'?'Création du compte…':v==='reset'?'Envoi…':'Connexion…';
     try{
-      if(v==='signup'){const c=checkSignup(em.value,$('#pw').value,$('#pseudo').value);if(await isBlocked(c.email))throw new Error(BLOCKED_MSG);S.authMsg=null;await S.api.signUp(c.email,$('#pw').value,c.pseudo)}
+      if(v==='signup'){const c=checkSignup(em.value,$('#pw').value,$('#pseudo').value);if(await isBlocked(c.email)){await kick();return}S.authMsg=null;await S.api.signUp(c.email,$('#pw').value,c.pseudo)}
       else if(v==='reset'){if(!emailOk(em.value))throw new Error('Indiquez votre adresse @'+DOMAIN+'.');await S.api.reset(em.value.trim().toLowerCase());S.authView='login';S.authMsg={k:'ok',t:'Si ce compte existe, un lien de réinitialisation vient d\'être envoyé.'};renderAuth()}
-      else{if(!emailOk(em.value))throw new Error('Seules les adresses @'+DOMAIN+' sont acceptées.');if(await isBlocked(em.value))throw new Error(BLOCKED_MSG);S.authMsg=null;await S.api.signIn(em.value.trim().toLowerCase(),$('#pw').value)}
+      else{if(!emailOk(em.value))throw new Error('Seules les adresses @'+DOMAIN+' sont acceptées.');if(await isBlocked(em.value)){await kick();return}S.authMsg=null;await S.api.signIn(em.value.trim().toLowerCase(),$('#pw').value)}
     }catch(err){showMsg('err',(err.code?fr(err):err).message);go.disabled=false;go.textContent=lbl}};
 }
 
