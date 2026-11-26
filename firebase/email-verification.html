@@ -1,37 +1,81 @@
-<div style="margin:0;padding:32px 12px;background:#eef2f6;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#122030">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #dde4ec">
-    <tr>
-      <td style="background:#1f78c8;background:linear-gradient(135deg,#1f78c8,#0f4f8f);padding:26px 32px">
-        <div style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-.01em">Guardia_Rev</div>
-        <div style="font-size:13px;color:#cfe4f7;margin-top:2px">Révisions des partiels · GCS1</div>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:30px 32px 8px">
-        <h1 style="margin:0 0 14px;font-size:22px;line-height:1.25;color:#122030">Bienvenue %DISPLAY_NAME% !</h1>
-        <p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#4a5b6b">
-          Ton compte Guardia_Rev est presque prêt. Confirme que l'adresse <b style="color:#122030">%EMAIL%</b> est bien la tienne pour accéder aux fiches, QCM, flashcards et partiels blancs.
-        </p>
-      </td>
-    </tr>
-    <tr>
-      <td align="center" style="padding:12px 32px 22px">
-        <a href="%LINK%" style="display:inline-block;background:#1f78c8;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:14px 30px;border-radius:12px">Valider mon adresse</a>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:0 32px 24px">
-        <p style="margin:0 0 6px;font-size:13px;line-height:1.5;color:#7a8897">Le bouton ne fonctionne pas ? Copie ce lien dans ton navigateur :</p>
-        <p style="margin:0;font-size:12px;line-height:1.5;word-break:break-all"><a href="%LINK%" style="color:#1f78c8">%LINK%</a></p>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:18px 32px;border-top:1px solid #e6ebf1;background:#f7f9fb">
-        <p style="margin:0;font-size:12px;line-height:1.5;color:#7a8897">
-          Tu n'as pas créé de compte ? Ignore simplement cet email : aucun compte ne sera activé.<br>
-          Guardia_Rev est réservé aux étudiants Guardia Cybersecurity School · réalisé par Titan_gp1.
-        </p>
-      </td>
-    </tr>
+<!-- Guardia_Rev &#183; mod&#232;le de l'email &#171; Validation de l'adresse e-mail &#187;.
+     &#192; coller dans Firebase : Authentication &#8250; Mod&#232;les &#8250; Validation de l'adresse e-mail &#8250; crayon &#8250; Message.
+     Objet conseill&#233; : Valide ton compte Guardia_Rev &#183; Nom de l'exp&#233;diteur : Guardia_Rev
+     Variables Firebase : %DISPLAY_NAME% %EMAIL% %LINK% %APP_NAME%
+     HTML d'email : tableaux et styles en ligne uniquement (Gmail, Outlook, Apple Mail). -->
+<div style="margin:0;padding:0;background:#f4eee3">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4eee3">
+<tr><td align="center" style="padding:36px 14px 40px">
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px">
+
+    <!-- En-t&#234;te : logo et nom -->
+    <tr><td align="center" style="padding:0 0 22px">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="padding-right:10px;vertical-align:middle"><img src="https://guardiarev.space/assets/icon-180.png" width="40" height="40" alt="" style="display:block;border:0;border-radius:50%"></td>
+        <td style="vertical-align:middle;font-family:'Instrument Serif',Georgia,'Times New Roman',serif;font-size:26px;line-height:1;color:#12203a">Guardia_Rev</td>
+      </tr></table>
+    </td></tr>
+
+    <!-- Carte -->
+    <tr><td style="background:#fbf8f2;border:1px solid #e4d9c5;border-radius:20px;overflow:hidden">
+
+      <!-- Bandeau bleu nuit -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr><td style="background:#12203a;background-image:linear-gradient(160deg,#1a2c4e 0%,#12203a 55%,#0a1324 100%);border-radius:20px 20px 0 0;padding:34px 36px 30px">
+        <div style="font-family:'DM Sans',Segoe UI,Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#c9a15a">GCS1 &middot; Guardia Cybersecurity School</div>
+        <div style="font-family:'Instrument Serif',Georgia,'Times New Roman',serif;font-size:40px;line-height:1;color:#f4eee3;text-transform:uppercase;margin-top:14px">Plus qu'un clic,<br>%DISPLAY_NAME%.</div>
+      </td></tr>
+      </table>
+
+      <!-- Texte -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr><td style="padding:30px 36px 6px;font-family:'DM Sans',Segoe UI,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#3b4861">
+        Ton compte est presque pr&#234;t. Confirme que l'adresse
+        <b style="color:#12203a">%EMAIL%</b> est bien la tienne pour ouvrir les cours, les QCM, les cartes et les partiels blancs.
+      </td></tr>
+
+      <!-- Bouton -->
+      <tr><td align="left" style="padding:24px 36px 26px">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="background:#12203a;border-radius:99px">
+            <a href="%LINK%" style="display:inline-block;padding:16px 28px;font-family:'DM Sans',Segoe UI,Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#f4eee3;text-decoration:none;border-radius:99px">Valider mon adresse</a>
+          </td>
+          <td style="padding-left:4px">
+            <a href="%LINK%" style="display:block;width:50px;height:50px;line-height:50px;text-align:center;background:#c9a15a;border-radius:50%;font-family:Segoe UI,Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;color:#12203a;text-decoration:none">&rarr;</a>
+          </td>
+        </tr></table>
+      </td></tr>
+
+      <!-- Ce qui t'attend -->
+      <tr><td style="padding:0 36px 8px">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #e4d9c5">
+          <tr><td style="padding:18px 0 6px;font-family:'DM Sans',Segoe UI,Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#5d6678">Ce qui t'attend</td></tr>
+          <tr><td style="padding:6px 0;font-family:'Instrument Serif',Georgia,'Times New Roman',serif;font-size:20px;line-height:1.25;color:#12203a"><span style="color:#c9a15a">&#9670;</span>&nbsp; 8 mati&#232;res, plus de 250 questions de QCM</td></tr>
+          <tr><td style="padding:6px 0;font-family:'Instrument Serif',Georgia,'Times New Roman',serif;font-size:20px;line-height:1.25;color:#12203a"><span style="color:#c9a15a">&#9670;</span>&nbsp; Partiels blancs chronom&#233;tr&#233;s et agenda de la promo</td></tr>
+          <tr><td style="padding:6px 0 18px;font-family:'Instrument Serif',Georgia,'Times New Roman',serif;font-size:20px;line-height:1.25;color:#12203a"><span style="color:#c9a15a">&#9670;</span>&nbsp; XP, classement et d&#233;fis entre &#233;tudiants</td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Lien de secours -->
+      <tr><td style="padding:0 36px 30px">
+        <div style="background:#efe7d8;border-radius:12px;padding:14px 16px;font-family:'DM Sans',Segoe UI,Helvetica,Arial,sans-serif;font-size:12.5px;line-height:1.5;color:#5d6678">
+          Le bouton ne marche pas ? Copie ce lien dans ton navigateur :<br>
+          <a href="%LINK%" style="color:#0b6f8c;word-break:break-all">%LINK%</a>
+        </div>
+      </td></tr>
+      </table>
+
+    </td></tr>
+
+    <!-- Pied -->
+    <tr><td align="center" style="padding:24px 20px 0;font-family:'DM Sans',Segoe UI,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#5d6678">
+      Tu n'as pas cr&#233;&#233; de compte ? Ignore cet email : rien ne sera activ&#233;.<br>
+      R&#233;serv&#233; aux &#233;tudiants Guardia Cybersecurity School &middot; <a href="https://guardiarev.space" style="color:#12203a">guardiarev.space</a> &middot; r&#233;alis&#233; par Titan_gp1
+    </td></tr>
+
   </table>
+
+</td></tr>
+</table>
 </div>
