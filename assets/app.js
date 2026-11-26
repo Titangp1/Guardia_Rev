@@ -3,7 +3,7 @@
    recherche et partiel blanc. Réalisé par Titan_gp1. */
 (function(){
 'use strict';
-const VERSION='6.0.0';
+const VERSION='7.0.0';
 const CFG=window.GR_CONFIG||{};
 const DOMAIN=(CFG.domain||'guardiaschool.fr').toLowerCase();
 const META={isr:['server','#2563eb'],supervision:['activity','#d97706'],fondamentaux:['lock','#0d9488'],devsecops:['terminal','#16a34a'],web:['code','#ea580c'],incident:['alert','#7c3aed'],anglais:['languages','#db2777'],js:['plug','#ca8a04']};
@@ -35,6 +35,17 @@ const dayKey=(d=new Date())=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d
 const addDays=(k,n)=>{const [y,m,d]=k.split('-').map(Number);return dayKey(new Date(y,m-1,d+n))};
 const daysBetween=(a,b)=>{const p=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};return Math.round((p(b)-p(a))/864e5)};
 const plural=(n,w,ws)=>n+' '+(n>1?(ws||w+'s'):w);
+/* Agenda de la promo (assets/data/agenda.js, généré par tools/agenda.py). */
+const AGENDA=((window.GR&&window.GR.agenda)||[]).slice().sort((a,b)=>(a.d+a.s).localeCompare(b.d+b.s));
+const AG_SUBJ=[[/devsecops|programmation &/i,'devsecops'],[/supervision/i,'supervision'],[/sécurisation isr/i,'isr'],[/full stack/i,'web'],[/enjeux de la cybers/i,'fondamentaux'],[/crise/i,'incident'],[/^lv1/i,'anglais']];
+const agSubj=t=>{for(const [r,id] of AG_SUBJ)if(r.test(t))return id;return null};
+const AG_KIND={partiel:['Partiels','#c8102e'],rattrapage:['Rattrapages','#c8102e'],vacances:['Vacances','#2f6b47'],langue:['Langues','#a37a33'],cours:['Cours','#3b4861'],evenement:['Événement','#0b6f8c']};
+const fmtDay=k=>new Date(k+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+const fmtShort=k=>new Date(k+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+/* Prochaine session d'examens : jours marqués « Partiels » à moins de 4 jours les uns des autres. */
+function nextExams(kind='partiel'){const t=dayKey();const ds=[...new Set(AGENDA.filter(e=>e.k===kind&&e.d>=t).map(e=>e.d))];if(!ds.length)return null;
+  let end=ds[0];for(const d of ds.slice(1)){if(daysBetween(end,d)<=4)end=d;else break}return {start:ds[0],end}}
+function upcoming(n){const t=dayKey(),h=new Date().toTimeString().slice(0,5);return AGENDA.filter(e=>e.d>t||(e.d===t&&e.e>=h)).slice(0,n)}
 const fmt=n=>Number(n||0).toLocaleString('fr-FR');
 const millis=t=>t&&typeof t.toMillis==='function'?t.toMillis():(+t||0);
 const ago=t=>{const s=Math.round((Date.now()-t)/1000);if(!t||s<0)return '';if(s<60)return 'à l\'instant';if(s<3600)return 'il y a '+Math.round(s/60)+' min';if(s<86400)return 'il y a '+Math.round(s/3600)+' h';return 'il y a '+plural(Math.round(s/86400),'jour')};
@@ -376,7 +387,7 @@ function layout(inner,r){
   const due=totalDue(),wrong=totalWrong(),inc=incoming().length,me=myProfile(),L=levelOf(me.xp);
   /* Pendant un défi ou un partiel blanc, on masque la navigation : rien ne doit distraire. */
   const focus=!!(QZ&&!QZ.done&&(QZ.ctx==='partiel'||QZ.ctx==='duel'));
-  const revise=[['accueil','index.html','home','Tableau de bord'],['revisions','revisions.html','clock','Révisions du jour',due+wrong],['partiel','partiel.html','grad','Partiel blanc'],['entrainements','entrainements.html','zap','Entraînements'],['lexique','lexique.html','book','Lexique']];
+  const revise=[['accueil','index.html','home','Tableau de bord'],['revisions','revisions.html','clock','Révisions du jour',due+wrong],['partiel','partiel.html','grad','Partiel blanc'],['entrainements','entrainements.html','zap','Entraînements'],['agenda','agenda.html','calendar','Agenda'],['lexique','lexique.html','book','Lexique']];
   const social=[['defis','defis.html','swords','Défis',inc],['classement','classement.html','trophy','Classement']];
   const link=([p,h,i,l,c])=>`<a href="${h}" ${PAGE===p?'aria-current="page"':''}>${ic(i)}<span>${l}</span>${c?`<span class="count" aria-label="${c} en attente">${c}</span>`:''}</a>`;
   const subs=`<a href="matieres.html" ${PAGE==='matieres'?'aria-current="page"':''}>${ic('bookOpen')}<span>Toutes les matières</span></a>`
@@ -422,6 +433,7 @@ function render(){
     else if(PAGE==='partiel')html=pagePartiel();
     else if(PAGE==='entrainements')html=pageDrills(qp('t'));
     else if(PAGE==='lexique')html=pageLexique(qp('m'),qp('q'));
+    else if(PAGE==='agenda')html=pageAgenda();
     else html=pageHome();
   }catch(e){console.error(e);html=notFound()}
   root.innerHTML=layout(html,r);
@@ -455,7 +467,7 @@ function pageHome(){
   loadSocial();
   const me=myProfile(),L=levelOf(me.xp);
   const due=totalDue(),wrong=totalWrong(),st=streak(),act=glob('_act',{});
-  const exam=glob('_settings',{}).examDate,left=exam?daysBetween(dayKey(),exam):null;
+  const nxE=nextExams(),exam=glob('_settings',{}).examDate||(nxE&&nxE.start),left=exam?daysBetween(dayKey(),exam):null;
   const so=S.soc,inc=incoming();
   const week=[...Array(7)].map((_,i)=>addDays(dayKey(),i-6));
   const nx=nextSubject(),ns=nx&&nx.s,ni=ns?firstUnread(ns):0;
@@ -477,6 +489,7 @@ function pageHome(){
       <p style="margin-top:4px">${left!=null&&left>=0?`Plus que <b>${plural(left,'jour')}</b> avant les partiels.`:'Voici ce qui vous attend aujourd\'hui.'}${exam?'':` <a href="profil.html#examDate">Ajouter la date des partiels</a>`}</p></div></div>
     <div class="row"><a class="btn white lg" href="revisions.html">${ic('clock','sm')}Réviser maintenant</a><a class="btn glass lg" href="defis.html">${ic('swords','sm')}Lancer un défi</a></div>
   </section>
+  <div class="marquee"><div class="marquee-track">${[0,1].map(k=>`<div class="marquee-list" ${k?'aria-hidden="true"':''}>${SUBJECTS.map(s=>`<a href="${U.sub(s.id)}" ${k?'tabindex="-1"':''}><span class="dia" style="color:${s.col}"></span>${esc(s.name)}</a>`).join('')}</div>`).join('')}</div></div>
   <section class="bento">
     <div class="card b2"><div class="pad-sm" style="border-bottom:1px solid var(--border)"><h2>À faire maintenant</h2></div>
       <div style="padding:6px">${todo.slice(0,5).map(([h,i,t,s])=>`<a class="todo" href="${h}">${tic(i)}<span class="t-txt"><b>${esc(t)}</b><span>${esc(s)}</span></span><span class="go">${ic('chevron','sm')}</span></a>`).join('')}</div></div>
@@ -491,7 +504,33 @@ function pageHome(){
     <div class="card tile b2"><div class="row spread"><div class="t-h">${tic('trophy')}Classement</div><a class="btn ghost sm" href="classement.html">Voir tout</a></div>
       ${so.count>1?`<div class="big">#${so.rank||'—'}<small>sur ${so.count}</small></div>`:''}
       <div class="mini-lb">${top5.length>1?top5.map((p,i)=>`<a href="${U.player(p.id)}" class="${p.id===me.id?'me-row':''}"><span class="rk">${i+1}</span>${avatar(p,26)}<span class="nm">${esc(p.pseudo)}${p.id===me.id?' (vous)':''}</span><span class="xpv">${fmt(p.xp)} XP</span></a>`).join(''):`<p class="small muted">${so.top==null?'Chargement…':'Vous êtes le premier inscrit. Partagez le site avec votre promo pour vous mesurer à elle.'}</p>`}</div></div>
-  </section>`;
+  ${agendaTile()}
+  </section>
+  ${ctaBox(left)}`;
+}
+function agEvent(e,withDay){const k=AG_KIND[e.k]||AG_KIND.cours,sid=agSubj(e.t),s=sid&&SUBJECTS.find(x=>x.id===sid);
+  return `<li class="ag-ev ag-${e.k}"><span class="ag-time">${withDay?`<b>${esc(fmtShort(e.d))}</b>`:''}${e.s}–${e.e}</span><span class="ag-body"><b>${esc(e.t)}</b><span>${[e.sem,e.l].filter(Boolean).map(esc).join(' · ')}${s?` · <a href="${U.sub(s.id)}">Réviser ${esc(s.name)}</a>`:''}</span></span><span class="ag-tag" style="--k:${k[1]}">${k[0]}</span></li>`}
+function agendaTile(){if(!AGENDA.length)return '';const up=upcoming(3);
+  return `<div class="card tile b4 ag-tile"><div class="row spread"><div class="t-h">${tic('calendar')}Prochains cours</div><a class="btn ghost sm" href="agenda.html">Tout l'agenda</a></div>
+  ${up.length?`<ul class="ag-list">${up.map(e=>agEvent(e,true)).join('')}</ul>`:'<p class="small muted">Rien de prévu pour le moment.</p>'}</div>`}
+function ctaBox(left){const t=left!=null&&left>=0?(left===0?'Les partiels, c\'est aujourd\'hui.':`Plus que ${plural(left,'jour')} avant les partiels.`):'Prêt pour les partiels ?';
+  return `<section class="cta"><p class="cta-body">${t} Faites un partiel blanc chronométré pour savoir où vous en êtes.</p><a class="arrowbtn" href="partiel.html"><span>Lancer un partiel blanc</span><i aria-hidden="true">${ic('arrow')}</i></a></section>`}
+function pageAgenda(){
+  const t=dayKey(),all=qp('tout')==='1',ex=nextExams(),rt=nextExams('rattrapage');
+  const fut=AGENDA.filter(e=>e.d>=t),list=all?fut:fut.filter(e=>daysBetween(t,e.d)<28);
+  const weeks=[];list.forEach(e=>{const d=new Date(e.d+'T12:00'),mon=addDays(e.d,-((d.getDay()+6)%7));let w=weeks.find(x=>x.k===mon);if(!w){w={k:mon,days:{}};weeks.push(w)}(w.days[e.d]=w.days[e.d]||[]).push(e)});
+  const left=ex?daysBetween(t,ex.start):null;
+  const counts={};AGENDA.filter(e=>e.k==='cours').forEach(e=>{counts[e.t]=(counts[e.t]||0)+1});
+  return crumbs([['Accueil','index.html'],['Agenda','']])+`<section class="head"><div><p class="eyebrow">GCS1 · 2026-2027</p><h1>Agenda</h1><p class="lede">Les cours, les langues, les vacances et les sessions de partiels de la promo, tirés de l'agenda de l'école.</p></div></section>
+  <section class="spot">
+    <div class="spot-main"><p class="eyebrow">Prochains partiels</p>${ex?`<div class="spot-big">${left<=0?'Aujourd\'hui':left}${left>0?`<small>${left>1?'jours':'jour'}</small>`:''}</div><p>Du ${esc(fmtDay(ex.start))} au ${esc(fmtDay(ex.end))}.</p>`:'<div class="spot-big">—</div><p>Aucune session de partiels à venir dans l\'agenda.</p>'}
+      <a class="arrowbtn light" href="partiel.html"><span>S'entraîner maintenant</span><i aria-hidden="true">${ic('arrow')}</i></a></div>
+    <div class="spot-side glass"><p class="eyebrow">À venir</p><ul class="ag-list">${upcoming(4).map(e=>agEvent(e,true)).join('')||'<li class="small">Rien de prévu.</li>'}</ul>${rt?`<p class="small" style="margin-top:12px">Rattrapages : du ${esc(fmtShort(rt.start))} au ${esc(fmtShort(rt.end))}.</p>`:''}</div>
+  </section>
+  <section class="steps">${weeks.map((w,i)=>`<div class="step"><div class="step-h"><span class="step-n">${String(i+1).padStart(2,'0')}</span><h2>Semaine du ${esc(fmtShort(w.k))}</h2></div>
+    <div class="step-body">${Object.entries(w.days).map(([d,evs])=>`<div class="ag-day${d===t?' today':''}"><h3>${esc(fmtDay(d))}${d===t?' <span class="badge">Aujourd\'hui</span>':''}</h3><ul class="ag-list">${evs.map(e=>agEvent(e,false)).join('')}</ul></div>`).join('')}</div></div>`).join('')||'<p class="empty">Aucun événement à venir.</p>'}</section>
+  ${all?'':`<p style="text-align:center"><a class="btn lg" href="agenda.html?tout=1">Afficher toute l'année</a></p>`}
+  <section class="card pad"><h2>Volume de cours par module</h2><div class="tbl" style="margin-top:14px"><table><tr><th>Module</th><th>Séances</th></tr>${Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{const sid=agSubj(k),s=sid&&SUBJECTS.find(x=>x.id===sid);return `<tr><td>${s?`<a href="${U.sub(s.id)}">${esc(k)}</a>`:esc(k)}</td><td>${v}</td></tr>`}).join('')}</table></div></section>`;
 }
 function subjCard(s){const st=stats(s);return `<a class="card subj" href="${U.sub(s.id)}" style="--c:${s.col}">
   <div class="row spread">${subjIco(s)}<span class="pring" style="--p:${st.pct};--c:${s.col}" aria-label="Maîtrise ${st.pct} %"><span>${st.pct}%</span></span></div>

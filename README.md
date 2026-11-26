@@ -6,7 +6,7 @@
 
 <p>
 <a href="https://titangp1.github.io/Guardia_Rev/"><img src="https://img.shields.io/badge/Ouvrir_le_site-1d6fd1?style=flat-square&logo=githubpages&logoColor=white" alt="Ouvrir le site"></a>
-<img src="https://img.shields.io/badge/version-6.0.0-1f2937?style=flat-square" alt="Version 6.0.0">
+<img src="https://img.shields.io/badge/version-7.0.0-1f2937?style=flat-square" alt="Version 7.0.0">
 <img src="https://img.shields.io/badge/acc%C3%A8s-%40guardiaschool.fr-a77d2f?style=flat-square" alt="Accès @guardiaschool.fr">
 </p>
 
@@ -63,6 +63,14 @@ python -m http.server 8000
 
 puis ouvrir <http://localhost:8000>. Pour tester sans compte Firebase : <http://localhost:8000/?local> (comptes gardés dans le navigateur, uniquement sur localhost ; le mode reste actif pendant la session, de page en page).
 
+## Agenda
+
+`assets/data/agenda.js` est généré depuis l'agenda iCal de l'école par `python tools/agenda.py`.
+Le lien iCal contient un **jeton personnel** : il n'est jamais commité. Le script le lit dans la variable
+d'environnement `AGENDA_URL` ou dans `tools/.agenda-url` (ignoré par Git). Seuls la date, les horaires,
+l'intitulé et la salle sont publiés. Relancer le script puis pousser pour mettre l'agenda à jour.
+Le compte à rebours de l'accueil utilise la prochaine session « Partiels » si l'étudiant n'a pas saisi de date.
+
 ## Firebase
 
 1. *Authentication → Sign-in method* : activer **E-mail/Mot de passe** et **Google**.
@@ -88,6 +96,7 @@ Guardia_Rev/
 ├── revisions.html        cartes à revoir, erreurs, QCM express
 ├── partiel.html          partiel blanc chronométré
 ├── entrainements.html ?t=sousreseaux|ports|osi|commandes
+├── agenda.html ?tout=1    agenda de la promo (cours, langues, vacances, partiels)
 ├── lexique.html ?m=… ?q=…
 ├── defis.html ?adv=…     défis entre étudiants
 ├── classement.html       classement et nombre d'inscrits
@@ -96,6 +105,7 @@ Guardia_Rev/
 ├── assets/
 │   ├── style.css         mise en page et composants
 │   ├── theme.css         thème éditorial v6 (papier crème, bleu nuit, or ; menu plein écran)
+│   ├── studio.css        couche v7 : noir et carmin, bandeau défilant, boutons flèche, frise
 │   ├── motion.js         animations d'apparition et en-tête qui se cache au défilement
 │   ├── app.js            code commun à toutes les pages (connexion, navigation, QCM, cartes, défis…)
 │   ├── config.js         domaine autorisé, adresses bannies (empreintes) et configuration Firebase
@@ -112,4 +122,4 @@ Pour ajouter du contenu : éditer le fichier de la matière dans `assets/data/`.
 
 Icônes [Lucide](https://lucide.dev) (licence ISC). Polices Inter et JetBrains Mono (Google Fonts). Choix de design guidés par les skills ui-ux-pro-max, no-ai-design-slop et beautiful-shadows.
 
-<div align="center"><sub>Guardia_Rev · v6.0.0 · Titan_gp1</sub></div>
+<div align="center"><sub>Guardia_Rev · v7.0.0 · Titan_gp1</sub></div>

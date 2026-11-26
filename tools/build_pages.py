@@ -6,9 +6,9 @@ et la présence des données de cours changent. Usage, depuis la racine du dép�
 """
 from pathlib import Path
 
-VERSION = "6.0.0"
+VERSION = "7.0.0"
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ["isr", "supervision", "fondamentaux", "devsecops", "web", "incident", "anglais", "js"]
+DATA = ["isr", "supervision", "fondamentaux", "devsecops", "web", "incident", "anglais", "js", "agenda"]
 
 # fichier, identifiant de page, titre, description, charge les données de cours ?
 PAGES = [
@@ -26,6 +26,7 @@ PAGES = [
     ("profil.html", "profil", "Mon profil", "Votre profil, vos badges et vos réglages.", True),
     ("partiel.html", "partiel", "Partiel blanc", "Partiel blanc chronométré, toutes matières.", True),
     ("entrainements.html", "entrainements", "Entraînements", "Sous-réseaux, ports, modèle OSI et commandes.", True),
+    ("agenda.html", "agenda", "Agenda", "Cours, langues, vacances et partiels de la promo.", True),
     ("lexique.html", "lexique", "Lexique", "Toutes les notions à connaître, filtrables.", True),
 ]
 
@@ -47,6 +48,7 @@ TEMPLATE = """<!doctype html>
 <script>(function(){{try{{var t=localStorage.getItem('gr-theme');if(t)document.documentElement.dataset.theme=t}}catch(e){{}}}})();</script>
 <link rel="stylesheet" href="assets/style.css?v={v}">
 <link rel="stylesheet" href="assets/theme.css?v={v}">
+<link rel="stylesheet" href="assets/studio.css?v={v}">
 </head>
 <body data-page="{page}">
 <div id="root"><div class="loading"><div class="spin" role="status" aria-label="Chargement"></div></div></div>

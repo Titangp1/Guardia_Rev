@@ -20,7 +20,7 @@
   var done=false;
   var io=new IntersectionObserver(function(entries){
     entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}});
-  },{rootMargin:'0px 0px -8% 0px',threshold:.08});
+  },{rootMargin:'0px 0px -6% 0px',threshold:0});
   var SEL='.main > .card, .main > section, .main > .bento > *, .main > .grid > *, .main .g3 > *, .main .g2 > *, .main .fiche .sec, .credit';
   var TITLES='.hero h1, .head h1, .subj-head h1';
   function arm(){
