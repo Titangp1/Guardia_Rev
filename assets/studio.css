@@ -3,6 +3,12 @@
    Palette identique à la v6 : papier crème, bleu nuit, or sable. Pas de rouge. */
 :root{--dark-grad:radial-gradient(60% 80% at 18% 20%,rgba(201,161,90,.22) 0%,transparent 70%),radial-gradient(50% 70% at 95% 100%,rgba(11,111,140,.20),transparent 70%),linear-gradient(160deg,#12203a 0%,#0e1a30 55%,#0a1324 100%)}
 
+/* Correctifs d'affichage (titre coupé & podium) */
+.main{padding-top:calc(var(--head-h) + 42px)}
+.head h1.rv-title,.head h1{clip-path:none!important;padding-top:4px}
+.podium-card{padding-bottom:0!important;overflow:hidden}
+.podium .step{display:grid!important;grid-template-columns:1fr!important;place-items:center!important;padding:0!important;border-top:1px solid var(--border)!important;border-bottom:0!important;line-height:1}
+
 /* Bandeau défilant des matières */
 .marquee{margin:0 calc(-1 * clamp(16px,4vw,48px));overflow:hidden;background:var(--dark-grad);color:#f4eee3;padding:24px 0}
 .marquee-track{display:flex;width:max-content;animation:marquee 50s linear infinite}
@@ -62,11 +68,11 @@
 .ag-tile .ag-list{margin-top:4px}
 @media (max-width:560px){.ag-ev{grid-template-columns:1fr;gap:6px}.ag-tag{justify-self:start}}
 
-/* Agenda : frise d'étapes */
+/* Agenda : frise d'étapes (ciblée sur .steps .step pour ne pas casser .podium .step) */
 .steps{display:grid}
-.step{display:grid;grid-template-columns:minmax(180px,280px) 1fr;gap:clamp(16px,4vw,56px);padding:36px 0;border-top:1px solid var(--border-strong)}
-.step:first-child{border-top:0}
-@media (max-width:860px){.step{grid-template-columns:1fr}}
+.steps .step{display:grid;grid-template-columns:minmax(180px,280px) 1fr;gap:clamp(16px,4vw,56px);padding:36px 0;border-top:1px solid var(--border-strong)}
+.steps .step:first-child{border-top:0}
+@media (max-width:860px){.steps .step{grid-template-columns:1fr}}
 .step-h{display:flex;flex-direction:column;gap:12px;position:sticky;top:calc(var(--head-h) + 16px);align-self:start}
 @media (max-width:860px){.step-h{position:static}}
 .step-n{width:56px;height:56px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-weight:700;font-size:15px;letter-spacing:.04em}
