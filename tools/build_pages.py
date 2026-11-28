@@ -6,7 +6,7 @@ et la présence des données de cours changent. Usage, depuis la racine du dép�
 """
 from pathlib import Path
 
-VERSION = "7.3.0"
+VERSION = "7.4.0"
 ROOT = Path(__file__).resolve().parent.parent
 SITE = "https://guardiarev.space"
 DATA = ["isr", "supervision", "fondamentaux", "devsecops", "web", "incident", "anglais", "js", "agenda"]

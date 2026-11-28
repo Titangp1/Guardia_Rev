@@ -3,7 +3,7 @@
    recherche et partiel blanc. Réalisé par Titan_gp1. */
 (function(){
 'use strict';
-const VERSION='7.3.0';
+const VERSION='7.4.0';
 const CFG=window.GR_CONFIG||{};
 const DOMAIN=(CFG.domain||'guardiaschool.fr').toLowerCase();
 const META={isr:['server','#2563eb'],supervision:['activity','#d97706'],fondamentaux:['lock','#0d9488'],devsecops:['terminal','#16a34a'],web:['code','#ea580c'],incident:['alert','#7c3aed'],anglais:['languages','#db2777'],js:['plug','#ca8a04']};
@@ -546,6 +546,19 @@ function agendaTile(){if(!AGENDA.length)return '';const up=upcoming(3);
   ${up.length?`<ul class="ag-list">${up.map(e=>agEvent(e,true)).join('')}</ul>`:'<p class="small muted">Rien de prévu pour le moment.</p>'}</div>`}
 function ctaBox(left){const t=left!=null&&left>=0?(left===0?'Les partiels, c\'est aujourd\'hui.':`Plus que ${plural(left,'jour')} avant les partiels.`):'Prêt pour les partiels ?';
   return `<section class="cta"><p class="cta-body">${t} Faites un partiel blanc chronométré pour savoir où vous en êtes.</p><a class="arrowbtn" href="partiel.html"><span>Lancer un partiel blanc</span><i aria-hidden="true">${ic('arrow')}</i></a></section>`}
+/* Vue mois simple : une grille lundi → dimanche, navigation par ?mois=AAAA-MM. */
+function monthGrid(m){
+  const t=dayKey(),cur=/^\d{4}-\d{2}$/.test(m||'')?m:t.slice(0,7);
+  const [y,mo]=cur.split('-').map(Number),first=new Date(y,mo-1,1),days=new Date(y,mo,0).getDate();
+  const lead=(first.getDay()+6)%7,prev=dayKey(new Date(y,mo-2,1)).slice(0,7),next=dayKey(new Date(y,mo,1)).slice(0,7);
+  const label=first.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  const by={};AGENDA.forEach(e=>{if(e.d.startsWith(cur))(by[e.d]=by[e.d]||[]).push(e)});
+  const cells=[];for(let i=0;i<lead;i++)cells.push('<div class="mg-c mg-out" aria-hidden="true"></div>');
+  for(let d=1;d<=days;d++){const k=cur+'-'+String(d).padStart(2,'0'),ev=by[k]||[],wk=new Date(y,mo-1,d).getDay();
+    cells.push(`<div class="mg-c${k===t?' mg-today':''}${wk===0||wk===6?' mg-we':''}${ev.some(e=>e.k==='partiel')?' mg-exam':''}${ev.some(e=>e.k==='vacances')?' mg-off':''}"><span class="mg-d">${d}</span>${ev.slice(0,3).map(e=>`<span class="mg-e" style="--k:${(AG_KIND[e.k]||AG_KIND.cours)[1]}" title="${esc(e.s+'–'+e.e+' · '+e.t+(e.l?' · '+e.l:''))}"><b>${e.k==='vacances'||e.k==='partiel'||e.k==='rattrapage'?'':e.s}</b>${esc(e.t)}</span>`).join('')}${ev.length>3?`<span class="mg-more">+${ev.length-3}</span>`:''}</div>`)}
+  return `<section class="card pad mg" id="mois"><div class="row spread mg-h"><a class="btn icon" href="agenda.html?mois=${prev}#mois" aria-label="Mois précédent">${ic('chevron')}</a><h2>${esc(label)}</h2><a class="btn icon" href="agenda.html?mois=${next}#mois" aria-label="Mois suivant">${ic('chevron')}</a></div>
+  <div class="mg-g">${['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].map(x=>`<div class="mg-w">${x}</div>`).join('')}${cells.join('')}</div>
+  <p class="small muted mg-leg"><span class="dia" style="color:#3b4861"></span> Cours <span class="dia" style="color:#a37a33"></span> Langues, partiels <span class="dia" style="color:#2f6b47"></span> Vacances · Survolez un cours pour voir l'horaire et la salle.</p></section>`}
 function pageAgenda(){
   const t=dayKey(),all=qp('tout')==='1',ex=nextExams(),rt=nextExams('rattrapage');
   const fut=AGENDA.filter(e=>e.d>=t),list=all?fut:fut.filter(e=>daysBetween(t,e.d)<28);
@@ -558,6 +571,7 @@ function pageAgenda(){
       <a class="arrowbtn light" href="partiel.html"><span>S'entraîner maintenant</span><i aria-hidden="true">${ic('arrow')}</i></a></div>
     <div class="spot-side glass"><p class="eyebrow">À venir</p><ul class="ag-list">${upcoming(4).map(e=>agEvent(e,true)).join('')||'<li class="small">Rien de prévu.</li>'}</ul>${rt?`<p class="small" style="margin-top:12px">Rattrapages : du ${esc(fmtShort(rt.start))} au ${esc(fmtShort(rt.end))}.</p>`:''}</div>
   </section>
+  ${monthGrid(qp('mois'))}
   <section class="steps">${weeks.map((w,i)=>`<div class="step"><div class="step-h"><span class="step-n">${String(i+1).padStart(2,'0')}</span><h2>Semaine du ${esc(fmtShort(w.k))}</h2></div>
     <div class="step-body">${Object.entries(w.days).map(([d,evs])=>`<div class="ag-day${d===t?' today':''}"><h3>${esc(fmtDay(d))}${d===t?' <span class="badge">Aujourd\'hui</span>':''}</h3><ul class="ag-list">${evs.map(e=>agEvent(e,false)).join('')}</ul></div>`).join('')}</div></div>`).join('')||'<p class="empty">Aucun événement à venir.</p>'}</section>
   ${all?'':`<p style="text-align:center"><a class="btn lg" href="agenda.html?tout=1">Afficher toute l'année</a></p>`}
